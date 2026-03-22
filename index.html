@@ -605,98 +605,63 @@ body{background:var(--s1);color:var(--txt);font-family:var(--fn);font-size:14px;
 }
 .manual-copy-btn:hover{background:rgba(10,118,85,.14)}
 
-/* ── LOGIN / SETUP SCREEN ── */
-.login-screen{
-  position:fixed;inset:0;background:var(--teal);z-index:1000;
-  display:flex;align-items:center;justify-content:center;padding:20px
-}
-.login-card{
-  background:#fff;border-radius:var(--r2);padding:40px 44px;
-  width:100%;max-width:440px;box-shadow:0 24px 64px rgba(0,0,0,.25)
-}
+/* ══════════════════════════════════════════
+   AUTH SYSTEM
+══════════════════════════════════════════ */
+.login-screen{position:fixed;inset:0;background:var(--teal);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
+.login-screen.visible{display:flex}
+.login-card{background:#fff;border-radius:var(--r2);padding:40px 44px;width:100%;max-width:420px;box-shadow:0 24px 64px rgba(0,0,0,.3)}
 .login-logo{font-family:var(--fm);font-size:20px;font-weight:500;color:var(--orange);letter-spacing:.08em;margin-bottom:4px}
 .login-logo span{color:var(--teal)}
-.login-tagline{font-size:12px;color:var(--txt3);margin-bottom:32px}
-.login-title{font-family:var(--fm);font-size:13px;font-weight:500;color:var(--teal);margin-bottom:6px}
-.login-sub{font-size:11px;color:var(--txt3);margin-bottom:20px;line-height:1.5}
-.login-input{
-  width:100%;padding:11px 14px;border:1px solid var(--bdr);border-radius:var(--r);
-  font-family:var(--fm);font-size:14px;letter-spacing:.08em;color:var(--txt);
-  outline:none;transition:border-color .15s;margin-bottom:12px;background:#fff
-}
+.login-tagline{font-size:12px;color:var(--txt3);margin-bottom:28px}
+.login-label{font-size:11px;font-weight:500;color:var(--txt2);font-family:var(--fm);margin-bottom:5px;display:block}
+.login-input{width:100%;padding:10px 13px;border:1px solid var(--bdr);border-radius:var(--r);font-family:var(--fn);font-size:13px;color:var(--txt);outline:none;transition:border-color .15s;margin-bottom:10px;background:#fff}
 .login-input:focus{border-color:var(--teal)}
-.login-input.err{border-color:var(--err)}
-.login-btn{
-  width:100%;padding:11px;border-radius:var(--r);border:none;
-  background:var(--teal);color:#fff;font-family:var(--fm);font-size:13px;
-  font-weight:500;cursor:pointer;transition:all .15s;margin-bottom:8px
-}
-.login-btn:hover{background:#024a4b;transform:translateY(-1px)}
-.login-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
-.login-err{font-size:11px;color:var(--err);margin-bottom:8px;min-height:16px}
-.login-setup-link{font-size:11px;color:var(--txt3);text-align:center;cursor:pointer;transition:color .15s}
-.login-setup-link:hover{color:var(--teal)}
-.login-divider{border:none;border-top:1px solid var(--bdr);margin:20px 0}
-.login-mode-tabs{display:flex;gap:6px;margin-bottom:20px}
-.login-mode-tab{
-  flex:1;padding:8px;border-radius:var(--r);border:2px solid var(--bdr);
-  background:#fff;color:var(--txt2);font-family:var(--fm);font-size:11px;
-  cursor:pointer;text-align:center;transition:all .15s
-}
-.login-mode-tab.active{border-color:var(--teal);background:rgba(1,51,52,.06);color:var(--teal);font-weight:500}
+.login-btn{width:100%;padding:11px;border-radius:var(--r);border:none;background:var(--teal);color:#fff;font-family:var(--fm);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;margin-top:2px}
+.login-btn:hover{background:#024a4b}
+.login-btn:disabled{opacity:.5;cursor:not-allowed}
+.login-err{font-size:11px;color:var(--err);min-height:18px;margin-bottom:6px}
+.login-footer{font-size:11px;color:var(--txt3);text-align:center;margin-top:14px;cursor:pointer;transition:color .15s}
+.login-footer:hover{color:var(--teal)}
 
-/* Setup screen */
-.setup-section{margin-bottom:20px}
-.setup-label{font-size:11px;font-weight:500;color:var(--txt2);font-family:var(--fm);margin-bottom:5px;display:block}
-.setup-hint{font-size:10px;color:var(--txt3);margin-top:3px;line-height:1.4}
-.setup-step{
-  display:flex;gap:12px;padding:12px 14px;background:var(--s1);
-  border-radius:var(--r);border:1px solid var(--bdr);margin-bottom:8px
-}
-.setup-step-num{
-  width:22px;height:22px;border-radius:50%;background:var(--teal);color:#fff;
-  font-family:var(--fm);font-size:10px;font-weight:500;display:flex;
-  align-items:center;justify-content:center;flex-shrink:0;margin-top:1px
-}
-.setup-step-body{flex:1}
-.setup-step-title{font-size:12px;font-weight:500;color:var(--txt);margin-bottom:3px}
+/* Setup card */
+.setup-card{background:#fff;border-radius:var(--r2);padding:36px 40px;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.3)}
+.setup-section-title{font-family:var(--fm);font-size:11px;font-weight:500;color:var(--teal);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--bdr);text-transform:uppercase;letter-spacing:.08em}
+.setup-step{display:flex;gap:12px;padding:11px 14px;background:var(--s1);border-radius:var(--r);border:1px solid var(--bdr);margin-bottom:8px}
+.setup-step-num{width:22px;height:22px;border-radius:50%;background:var(--teal);color:#fff;font-family:var(--fm);font-size:10px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.setup-step-title{font-size:12px;font-weight:500;color:var(--txt);margin-bottom:2px}
 .setup-step-desc{font-size:11px;color:var(--txt3);line-height:1.5}
-.setup-step-link{color:var(--info);text-decoration:none;font-size:11px}
-.setup-step-link:hover{text-decoration:underline}
-.setup-code-display{
-  font-family:var(--fm);font-size:13px;letter-spacing:.1em;padding:8px 12px;
-  background:var(--s2);border-radius:var(--r);color:var(--teal);font-weight:500;
-  display:flex;align-items:center;justify-content:space-between;margin-top:6px
-}
-.setup-copy-btn{font-size:10px;color:var(--txt3);background:none;border:none;cursor:pointer;padding:2px 6px}
-.setup-copy-btn:hover{color:var(--teal)}
+.setup-link{color:#1877F2;font-size:11px;text-decoration:none}
+.setup-link:hover{text-decoration:underline}
+.setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 
-/* Role badge in header */
-.hdr-role-badge{
-  font-family:var(--fm);font-size:10px;padding:3px 9px;border-radius:10px;
-  border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);white-space:nowrap
-}
-.hdr-role-badge.admin{border-color:var(--orange);color:var(--orange)}
-.hdr-logout-btn{
-  padding:5px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.2);
-  background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);
-  font-family:var(--fm);font-size:10px;cursor:pointer;transition:all .15s
-}
-.hdr-logout-btn:hover{border-color:rgba(255,255,255,.4);color:#fff}
+/* Header auth elements */
+.hdr-role{font-family:var(--fm);font-size:10px;padding:3px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);white-space:nowrap;display:none}
+.hdr-role.master{border-color:#a78bfa;color:#a78bfa}
+.hdr-role.admin{border-color:var(--orange);color:var(--orange)}
+.hdr-role.operator{border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.6)}
+.hdr-sync{display:none;align-items:center;gap:5px;font-family:var(--fm);font-size:10px;color:rgba(255,255,255,.45);white-space:nowrap}
+.hdr-sync-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;background:rgba(255,255,255,.3)}
+.hdr-sync-dot.ok{background:var(--ok)}.hdr-sync-dot.err{background:var(--err)}.hdr-sync-dot.spin{background:var(--orange);animation:sdot .8s infinite}
+@keyframes sdot{0%,100%{opacity:1}50%{opacity:.25}}
+.hdr-logout{padding:5px 11px;border-radius:6px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:rgba(255,255,255,.65);font-family:var(--fm);font-size:10px;cursor:pointer;transition:all .15s;display:none}
+.hdr-logout:hover{border-color:rgba(255,255,255,.4);color:#fff}
 
-/* Sync indicator */
-.sync-indicator{
-  display:flex;align-items:center;gap:5px;font-family:var(--fm);
-  font-size:10px;color:rgba(255,255,255,.5);white-space:nowrap
-}
-.sync-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.3)}
-.sync-dot.ok{background:var(--ok)}
-.sync-dot.err{background:var(--err)}
-.sync-dot.loading{background:var(--orange);animation:pulse .8s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-
-/* Operator read-only overlay for edit buttons */
-.op-hidden{display:none!important}
+/* Users view */
+.users-tbl{width:100%;border-collapse:collapse;font-size:12px;background:#fff}
+.users-tbl th{background:var(--teal);color:rgba(255,255,255,.85);padding:9px 14px;text-align:left;font-family:var(--fm);font-size:10px;font-weight:500;letter-spacing:.05em;white-space:nowrap}
+.users-tbl td{padding:10px 14px;border-bottom:1px solid var(--bdr);vertical-align:middle}
+.users-tbl tr:last-child td{border-bottom:none}
+.users-tbl tr:hover td{background:var(--s1)}
+.role-pill{font-family:var(--fm);font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid;white-space:nowrap}
+.role-pill.master{background:rgba(124,58,237,.08);border-color:rgba(124,58,237,.25);color:#7C3AED}
+.role-pill.admin{background:rgba(255,92,26,.08);border-color:rgba(255,92,26,.25);color:var(--orange)}
+.role-pill.operator{background:rgba(1,51,52,.07);border-color:rgba(1,51,52,.2);color:var(--teal)}
+.active-pill{font-family:var(--fm);font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid}
+.active-pill.on{background:rgba(10,118,85,.08);border-color:rgba(10,118,85,.25);color:var(--ok)}
+.active-pill.off{background:var(--s2);border-color:var(--bdr);color:var(--txt3)}
+.user-form-card{background:#fff;border:1px solid var(--bdr);border-radius:var(--r2);padding:20px 24px;margin-bottom:16px;box-shadow:var(--shadow);display:none}
+.user-form-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
 
 /* ── D1: AVISO CATÁLOGOS VACÍOS ── */
 .catalog-warn-banner{
@@ -754,90 +719,91 @@ body{background:var(--s1);color:var(--txt);font-family:var(--fn);font-size:14px;
 <div class="progress-label" id="progressLabel"></div>
 <div class="toast" id="toast"></div>
 
-<!-- LOGIN SCREEN -->
+<!-- ══ AUTH SCREENS ══ -->
 <div class="login-screen" id="loginScreen">
+
+  <!-- Login -->
   <div class="login-card" id="loginCard">
     <div class="login-logo">Taxo<span>Platform</span></div>
     <div class="login-tagline">Validación de taxonomías para agencias de medios</div>
-
-    <div class="login-mode-tabs">
-      <div class="login-mode-tab active" id="tabAdmin" onclick="loginSwitchMode('admin')">Admin</div>
-      <div class="login-mode-tab" id="tabOperator" onclick="loginSwitchMode('operator')">Operador</div>
-    </div>
-
-    <div id="loginFormArea">
-      <div class="login-title" id="loginTitle">Acceso Admin</div>
-      <div class="login-sub" id="loginSub">Ingresa tu código de administrador para acceder a la configuración completa.</div>
-      <input type="password" class="login-input" id="loginCodeInput"
-        placeholder="Código de acceso"
-        onkeydown="if(event.key==='Enter') loginSubmit()">
-      <div class="login-err" id="loginErr"></div>
-      <button class="login-btn" id="loginBtn" onclick="loginSubmit()">Entrar</button>
-      <div class="login-setup-link" onclick="showSetupScreen()">¿Primera vez? Configurar la plataforma →</div>
-    </div>
+    <label class="login-label">Usuario</label>
+    <input type="text" class="login-input" id="loginUser" placeholder="tu_usuario" autocomplete="username"
+      onkeydown="if(event.key==='Enter') document.getElementById('loginPass').focus()">
+    <label class="login-label">Contraseña</label>
+    <input type="password" class="login-input" id="loginPass" placeholder="••••••••" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter') authLogin()">
+    <div class="login-err" id="loginErr"></div>
+    <button class="login-btn" id="loginBtn" onclick="authLogin()">Entrar</button>
+    <div class="login-footer" onclick="showSetup()">Primera vez · Configuración del sistema →</div>
   </div>
 
-  <!-- SETUP SCREEN (hidden initially) -->
-  <div class="login-card" id="setupCard" style="display:none;max-width:540px;max-height:90vh;overflow-y:auto">
+  <!-- Setup (Master only, first time) -->
+  <div class="setup-card" id="setupCard" style="display:none">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
-      <button onclick="hideSetupScreen()" style="border:none;background:none;cursor:pointer;color:var(--txt3);font-size:18px;padding:0">←</button>
+      <button onclick="hideSetup()" style="border:none;background:none;cursor:pointer;color:var(--txt3);font-size:20px;line-height:1;padding:0">←</button>
       <div>
-        <div class="login-logo">Configuración inicial</div>
-        <div class="login-tagline">Sigue estos pasos una sola vez</div>
+        <div class="login-logo" style="font-size:16px">Configuración inicial</div>
+        <div class="login-tagline" style="margin-bottom:0">Solo el Master completa esto una vez</div>
       </div>
     </div>
 
-    <div class="setup-section">
-      <div class="setup-step">
-        <div class="setup-step-num">1</div>
-        <div class="setup-step-body">
-          <div class="setup-step-title">Crear el Google Sheet</div>
-          <div class="setup-step-desc">Crea un Google Sheet nuevo. Nómbralo como quieras (ej. "TaxoPlatform DB"). Copia su ID de la URL: <code style="font-family:var(--fm);font-size:10px;background:var(--s2);padding:1px 5px;border-radius:3px">docs.google.com/spreadsheets/d/<strong>ESTE_ES_EL_ID</strong>/edit</code></div>
-        </div>
-      </div>
-      <div class="setup-step">
-        <div class="setup-step-num">2</div>
-        <div class="setup-step-body">
-          <div class="setup-step-title">Crear Google Cloud Project</div>
-          <div class="setup-step-desc">Ve a <a href="https://console.cloud.google.com" target="_blank" class="setup-step-link">console.cloud.google.com</a> → Nuevo proyecto → APIs y Servicios → Habilitar API → busca "Google Sheets API" y habilítala. Luego ve a Credenciales → Crear credencial → ID de cliente OAuth → Aplicación web → agrega tu URL de GitHub Pages como origen autorizado.</div>
-        </div>
-      </div>
-      <div class="setup-step">
-        <div class="setup-step-num">3</div>
-        <div class="setup-step-body">
-          <div class="setup-step-title">Ingresar credenciales aquí</div>
-          <div class="setup-step-desc">Completa los campos y define tus códigos de acceso.</div>
-        </div>
+    <!-- Google Sheets -->
+    <div class="setup-section-title" style="margin-bottom:12px">Conexión a Google Sheets</div>
+    <div class="setup-step" style="margin-bottom:14px">
+      <div class="setup-step-num">1</div>
+      <div>
+        <div class="setup-step-title">Crea un Google Sheet</div>
+        <div class="setup-step-desc">Ve a <a href="https://sheets.google.com" target="_blank" class="setup-link">sheets.google.com</a> → crea una hoja nueva → copia el ID de la URL:<br>
+        <code style="font-family:var(--fm);font-size:10px;background:var(--s2);padding:1px 6px;border-radius:3px">docs.google.com/spreadsheets/d/<strong>ESTE_ID</strong>/edit</code></div>
       </div>
     </div>
-
-    <div class="setup-section">
-      <label class="setup-label">Google Sheet ID <span style="color:var(--err)">*</span></label>
-      <input type="text" class="login-input" id="setupSheetId" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms">
-      <div class="setup-hint">El ID largo de la URL de tu Google Sheet</div>
+    <div class="setup-step" style="margin-bottom:14px">
+      <div class="setup-step-num">2</div>
+      <div>
+        <div class="setup-step-title">Obtén un API Key de Google Cloud</div>
+        <div class="setup-step-desc"><a href="https://console.cloud.google.com" target="_blank" class="setup-link">console.cloud.google.com</a> → nuevo proyecto → Habilitar "Google Sheets API" → Credenciales → Crear → Clave de API. Restringe la clave a Google Sheets API. Haz el Sheet <strong>público de lectura</strong> (Compartir → "Cualquier persona con el enlace" puede ver).</div>
+      </div>
+    </div>
+    <div class="setup-step" style="margin-bottom:16px">
+      <div class="setup-step-num">3</div>
+      <div>
+        <div class="setup-step-title">Crea un Apps Script Web App (para escritura)</div>
+        <div class="setup-step-desc">En el Sheet → Extensiones → Apps Script → pega el código del README → Implementar → App web → Ejecutar como: Yo · Acceso: Cualquiera → copia la URL.</div>
+      </div>
     </div>
 
-    <div class="setup-section">
-      <label class="setup-label">Google OAuth Client ID <span style="color:var(--err)">*</span></label>
-      <input type="text" class="login-input" id="setupClientId" placeholder="123456789-abc.apps.googleusercontent.com">
-      <div class="setup-hint">De Google Cloud Console → Credenciales</div>
+    <div class="setup-grid">
+      <div>
+        <label class="login-label">Sheet ID <span style="color:var(--err)">*</span></label>
+        <input type="text" class="login-input" id="cfgSheetId" placeholder="1BxiMVs0XRA5...">
+      </div>
+      <div>
+        <label class="login-label">API Key <span style="color:var(--err)">*</span></label>
+        <input type="text" class="login-input" id="cfgApiKey" placeholder="AIzaSy...">
+      </div>
+    </div>
+    <div style="margin-bottom:16px">
+      <label class="login-label">Apps Script URL (para escritura)</label>
+      <input type="text" class="login-input" id="cfgScriptUrl" placeholder="https://script.google.com/macros/s/.../exec">
+      <div style="font-size:10px;color:var(--txt3);margin-top:3px">Sin esta URL la app funciona en modo lectura local. Puedes agregarla después.</div>
     </div>
 
-    <div class="setup-section">
-      <label class="setup-label">Código Admin <span style="color:var(--err)">*</span></label>
-      <input type="text" class="login-input" id="setupAdminCode" placeholder="Elige un código seguro" maxlength="50">
-      <div class="setup-hint">Solo tú lo sabes. Guárdalo bien.</div>
-    </div>
-
-    <div class="setup-section">
-      <label class="setup-label">Código Operador <span style="color:var(--err)">*</span></label>
-      <input type="text" class="login-input" id="setupOperatorCode" placeholder="Comparte este con tu equipo" maxlength="50">
-      <div class="setup-hint">Todos los operadores usan el mismo código.</div>
+    <!-- Master credentials -->
+    <div class="setup-section-title" style="margin:16px 0 12px">Tu cuenta Master</div>
+    <div class="setup-grid">
+      <div>
+        <label class="login-label">Usuario Master <span style="color:var(--err)">*</span></label>
+        <input type="text" class="login-input" id="cfgMasterUser" placeholder="master_user" autocomplete="off">
+      </div>
+      <div>
+        <label class="login-label">Contraseña Master <span style="color:var(--err)">*</span></label>
+        <input type="password" class="login-input" id="cfgMasterPass" placeholder="••••••••" autocomplete="new-password">
+      </div>
     </div>
 
     <div class="login-err" id="setupErr"></div>
-    <button class="login-btn" onclick="saveSetup()">Guardar configuración</button>
-    <div style="font-size:10px;color:var(--txt3);text-align:center;margin-top:8px">La configuración se guarda en este browser. Repite en cada dispositivo nuevo.</div>
+    <button class="login-btn" onclick="authSetup()">Guardar e iniciar sesión</button>
+    <div style="font-size:10px;color:var(--txt3);text-align:center;margin-top:10px">La configuración se guarda en este browser. Deberás repetirla en cada dispositivo nuevo.</div>
   </div>
 </div>
 
@@ -849,14 +815,11 @@ body{background:var(--s1);color:var(--txt);font-family:var(--fn);font-size:14px;
     <span class="hdr-client-name" id="hdrClientName">Sin cliente seleccionado</span>
   </div>
   <div class="hdr-sep"></div>
-  <div class="sync-indicator" id="syncIndicator" style="display:none">
-    <div class="sync-dot" id="syncDot"></div>
-    <span id="syncLabel">—</span>
-  </div>
-  <span class="hdr-role-badge" id="hdrRoleBadge" style="display:none"></span>
+  <div class="hdr-sync" id="hdrSync"><div class="hdr-sync-dot" id="hdrSyncDot"></div><span id="hdrSyncLbl"></span></div>
+  <span class="hdr-role" id="hdrRole"></span>
   <button class="hdr-btn" onclick="downloadTemplate()" id="btnTemplate" disabled>↓ Template</button>
   <button class="hdr-btn primary" onclick="nav('validate')">Validar →</button>
-  <button class="hdr-logout-btn" onclick="logout()">Salir</button>
+  <button class="hdr-logout" id="hdrLogout" onclick="authLogout()">Salir</button>
 </header>
 
 <div class="app">
@@ -866,7 +829,8 @@ body{background:var(--s1);color:var(--txt);font-family:var(--fn);font-size:14px;
       <div class="sb-label">Navegación</div>
       <button class="sb-btn active" id="nav-clients" onclick="nav('clients')">◫ Clientes</button>
       <button class="sb-btn" id="nav-validate" onclick="nav('validate')">✓ Validar</button>
-      <button class="sb-btn" id="nav-compare" onclick="nav('compare')">⇄ Comparar clientes</button>
+      <button class="sb-btn" id="nav-compare" onclick="nav('compare')" style="display:none">⇄ Comparar</button>
+      <button class="sb-btn" id="nav-users" onclick="nav('users')" style="display:none">👤 Usuarios</button>
     </div>
     <div class="sb-section" style="flex:1">
       <div class="sb-label">Clientes</div>
@@ -901,7 +865,7 @@ body{background:var(--s1);color:var(--txt);font-family:var(--fn);font-size:14px;
         <div class="page-title">Clientes</div>
         <div class="page-badge" id="clientCountBadge">0 clientes</div>
         <div class="page-sep"></div>
-        <button class="page-btn primary admin-only" onclick="startNewClient()">+ Nuevo cliente</button>
+        <button class="page-btn primary" id="btnNewClient" onclick="startNewClient()" style="display:none">+ Nuevo cliente</button>
       </div>
       <div id="clientsGrid"></div>
     </div>
@@ -920,7 +884,7 @@ body{background:var(--s1);color:var(--txt);font-family:var(--fn);font-size:14px;
       <div id="clientDetailContent"></div>
     </div>
 
-    <!-- COMPARE — B3 -->
+    <!-- COMPARE -->
     <div class="view" id="view-compare">
       <div class="page-hdr">
         <div class="page-title">Comparación de clientes</div>
@@ -928,6 +892,43 @@ body{background:var(--s1);color:var(--txt);font-family:var(--fn);font-size:14px;
         <div class="page-sep"></div>
       </div>
       <div id="compareContent"></div>
+    </div>
+
+    <!-- USERS (master + admin) -->
+    <div class="view" id="view-users">
+      <div class="page-hdr">
+        <div class="page-title">Gestión de usuarios</div>
+        <div class="page-badge" id="usersBadge">—</div>
+        <div class="page-sep"></div>
+        <button class="page-btn primary" onclick="usersOpenForm()">+ Nuevo usuario</button>
+      </div>
+      <div class="user-form-card" id="userFormCard">
+        <div style="font-family:var(--fm);font-size:12px;font-weight:500;color:var(--teal);margin-bottom:14px" id="userFormTitle">Nuevo usuario</div>
+        <div class="user-form-row">
+          <div>
+            <label class="form-label">Usuario <span class="req">*</span></label>
+            <input type="text" class="form-input" id="ufUsername" placeholder="nombre_usuario" autocomplete="off">
+          </div>
+          <div>
+            <label class="form-label">Contraseña <span class="req">*</span></label>
+            <input type="password" class="form-input" id="ufPassword" placeholder="••••••••" autocomplete="new-password">
+            <div class="form-hint" id="ufPassHint" style="display:none">Dejar vacío para no cambiar</div>
+          </div>
+          <div>
+            <label class="form-label">Rol <span class="req">*</span></label>
+            <select class="form-select" id="ufRole">
+              <option value="operator">Operador</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+        </div>
+        <div class="login-err" id="userFormErr"></div>
+        <div style="display:flex;gap:8px">
+          <button class="page-btn primary" onclick="usersSave()">Guardar</button>
+          <button class="page-btn" onclick="usersCloseForm()">Cancelar</button>
+        </div>
+      </div>
+      <div id="usersContent"></div>
     </div>
 
     <!-- VALIDATE -->
@@ -1105,21 +1106,16 @@ function getClient(id){ return DB.clients[id]||null; }
 function getActiveClient(){ return DB.activeClientId?getClient(DB.activeClientId):null; }
 function setActiveClient(id){ DB.activeClientId=id; storageSave(DB); updateHeaderClient(); }
 function saveClientToDB(c){
-  // B2: stamp updatedAt on save
-  c.updatedAt = new Date().toISOString().slice(0,10);
-  // B2: append to catalog log
-  if(!c.catalogLog) c.catalogLog = [];
-  const lastEntry = c.catalogLog[c.catalogLog.length-1];
-  const today = c.updatedAt;
-  if(!lastEntry || lastEntry.date !== today){
-    c.catalogLog.push({date: today, desc: 'Catálogo actualizado'});
-    if(c.catalogLog.length > 20) c.catalogLog = c.catalogLog.slice(-20);
-  }
-  DB.clients[c.id]=c;
-  storageSave(DB);
-  // Sync to Google Sheets if Admin and connected
-  if(currentRole==='admin' && sheetsToken){
-    writeToSheets().catch(e=>console.warn('Sheets write:',e));
+  c.updatedAt=new Date().toISOString().slice(0,10);
+  if(!c.catalogLog) c.catalogLog=[];
+  const last=c.catalogLog[c.catalogLog.length-1];
+  const today=c.updatedAt;
+  if(!last||last.date!==today){ c.catalogLog.push({date:today,desc:'Catálogo actualizado'}); if(c.catalogLog.length>20) c.catalogLog=c.catalogLog.slice(-20); }
+  DB.clients[c.id]=c; storageSave(DB);
+  // Sync to Sheets if master or admin
+  if(can('editClients')){
+    const cfg=cfgLoad();
+    if(cfg){ setSyncStatus('spin','Guardando...'); sheetsWriteData(cfg,JSON.stringify({clients:DB.clients,updatedAt:new Date().toISOString()})).then(()=>setSyncStatus('ok','Guardado')).catch(()=>setSyncStatus('err','Error al guardar')); }
   }
 }
 function deleteClientFromDB(id){ delete DB.clients[id]; if(DB.activeClientId===id) DB.activeClientId=null; storageSave(DB); }
@@ -1266,7 +1262,8 @@ function nav(view, data){
   currentView=view;
   if(view==='clients') renderClientsGrid();
   if(view==='validate') renderValidateView();
-  if(view==='compare') renderCompareView();
+  if(view==='compare'){ if(can('compare')) renderCompareView(); else return; }
+  if(view==='users'){   if(can('manageOps')) renderUsersView(); else return; }
   if(view==='client-detail' && data) renderClientDetail(data);
 }
 function updateHeaderClient(){
@@ -1275,7 +1272,7 @@ function updateHeaderClient(){
   document.getElementById('hdrClientName').textContent = c?c.name:'Sin cliente seleccionado';
   document.getElementById('btnTemplate').disabled = !c;
 }
-function renderAll(){ renderClientSidebar(); renderClientsGrid(); updateHeaderClient(); if(currentView==='validate') renderValidateView(); if(currentView==='compare') renderCompareView(); }
+function renderAll(){ renderClientSidebar(); renderClientsGrid(); updateHeaderClient(); if(currentView==='validate') renderValidateView(); if(currentView==='compare') renderCompareView(); if(currentView==='users') renderUsersView(); }
 
 // ═══════════════════════════════════════════════════
 //  M2 — CLIENT MANAGER
@@ -1294,8 +1291,8 @@ function renderClientSidebar(){
         <div class="client-meta">${c.levels.length} nivel${c.levels.length!==1?'es':''}</div>
       </div>
       <div class="client-actions">
-        <button class="client-icon-btn" onclick="editClient(event,'${c.id}')" title="Editar">✎</button>
-        <button class="client-icon-btn del" onclick="promptDeleteClient(event,'${c.id}')" title="Eliminar">✕</button>
+        ${can('editClients')?`<button class="client-icon-btn" onclick="editClient(event,'${c.id}')" title="Editar">✎</button>`:''}
+        ${can('editClients')?`<button class="client-icon-btn del" onclick="promptDeleteClient(event,'${c.id}')" title="Eliminar">✕</button>`:''}
       </div>
     </div>`).join('');
 }
@@ -1314,8 +1311,8 @@ function renderClientsGrid(){
           <div style="font-size:11px;color:var(--txt3);margin-top:1px">${c.platforms.join(' · ')||'Sin plataformas'}</div>
         </div>
         <div style="display:flex;gap:4px">
-          <button class="client-icon-btn" onclick="editClient(event,'${c.id}')">✎</button>
-          <button class="client-icon-btn del" onclick="promptDeleteClient(event,'${c.id}')">✕</button>
+          ${can('editClients')?`<button class="client-icon-btn" onclick="editClient(event,'${c.id}')">✎</button>`:''}
+          ${can('editClients')?`<button class="client-icon-btn del" onclick="promptDeleteClient(event,'${c.id}')">✕</button>`:''}
         </div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(${Math.min(c.levels.length,3)},1fr);gap:6px">
@@ -1389,8 +1386,8 @@ function renderClientDetail(id){
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <span class="version-tag">Actualizado: ${esc(updatedAt)}</span>
-        ${isAdmin()?`<button class="page-btn" onclick="exportClientCatalog('${c.id}')">↓ Exportar catálogo</button>`:''}
-        ${isAdmin()?`<button class="page-btn" onclick="editClient(null,'${c.id}')">✎ Editar estructura</button>`:''}
+        ${can('exportCatalog')?`<button class="page-btn" onclick="exportClientCatalog('${c.id}')">↓ Exportar catálogo</button>`:''}
+        ${can('editClients')?`<button class="page-btn" onclick="editClient(null,'${c.id}')">✎ Editar estructura</button>`:''}
         <button class="page-btn primary" onclick="selectClientAndValidate(event,'${c.id}')">Validar →</button>
       </div>
     </div>
@@ -1415,7 +1412,7 @@ function renderClientDetail(id){
     </div>
     <div class="search-match-info" id="catSearchInfo-${c.id}" style="display:none"></div>
 
-    <!-- N1-A: Edición directa por nivel (solo Admin) / Vista lectura (Operador) -->
+    <!-- N1-A: Edición directa por nivel -->
     <div id="catEditLevels-${c.id}">
       ${c.levels.map((l,li)=>buildCatEditLevel(c.id,li)).join('')}
     </div>
@@ -1466,34 +1463,34 @@ function buildCatEditLevel(cid, li, highlight=''){
 
     // Values chips with highlight
     let valsHtml = '';
+    const editable = can('editCatalog');
     if(!isFree && !hasSub){
       const chips = vals.map(([k,v])=>{
         const kH = highlight ? k.replace(new RegExp('('+escRe(highlight)+')','gi'),'<span class="search-highlight">$1</span>') : esc(k);
         const vH = highlight ? esc(v).replace(new RegExp('('+escRe(highlight)+')','gi'),'<span class="search-highlight">$1</span>') : esc(v);
         return `<span class="cat-edit-chip">
           <span title="${esc(v)}">${kH}${v&&v!==k?' <span style="color:var(--txt3);font-weight:400">— '+vH+'</span>':''}</span>
-          ${isAdmin()?`<span class="cat-edit-chip-del" onclick="catDelVal('${cid}',${li},${fi},'${esc(k)}')">×</span>`:''}
+          ${editable?`<span class="cat-edit-chip-del" onclick="catDelVal('${cid}',${li},${fi},'${esc(k)}')">×</span>`:''}
         </span>`;
       }).join('');
       valsHtml = `
         <div class="cat-edit-vals">${chips||'<span style="font-size:11px;color:var(--txt3)">Sin valores</span>'}</div>
-        ${isAdmin()?`<div class="cat-edit-add-row">
+        ${editable?`<div class="cat-edit-add-row">
           <input type="text" class="cat-edit-key" id="cek-${cid}-${li}-${fi}" placeholder="KEY" maxlength="40">
           <input type="text" class="cat-edit-desc" id="ced-${cid}-${li}-${fi}" placeholder="Descripción (opcional)">
           <button class="cat-edit-add-btn" onclick="catAddVal('${cid}',${li},${fi})">+ Agregar</button>
         </div>`:''}`;
     } else if(hasSub){
-      // Sub-fields edit
       const subBlocks = (f.subTax.subFields||[]).map((sf,si)=>{
         const subVals = Object.entries(sf.values||{});
         const subChips = subVals.map(([k,v])=>`<span class="cat-edit-chip">
           <span title="${esc(v)}">${esc(k)}${v&&v!==k?' <span style="color:var(--txt3);font-weight:400">— '+esc(v)+'</span>':''}</span>
-          ${isAdmin()?`<span class="cat-edit-chip-del" onclick="catDelSubVal('${cid}',${li},${fi},${si},'${esc(k)}')">×</span>`:''}
+          ${editable?`<span class="cat-edit-chip-del" onclick="catDelSubVal('${cid}',${li},${fi},${si},'${esc(k)}')">×</span>`:''}
         </span>`).join('');
         return `<div style="margin-bottom:10px;padding:10px 12px;background:rgba(124,58,237,.04);border-radius:6px;border:1px solid rgba(124,58,237,.12)">
           <div style="font-family:var(--fm);font-size:10px;color:#7C3AED;margin-bottom:6px;font-weight:500">${si+1}. ${esc(sf.name||'Sub-campo '+(si+1))}</div>
           <div class="cat-edit-vals">${subChips||'<span style="font-size:11px;color:var(--txt3)">Sin valores</span>'}</div>
-          ${isAdmin()?`<div class="cat-edit-add-row">
+          ${editable?`<div class="cat-edit-add-row">
             <input type="text" class="cat-edit-key" id="cesk-${cid}-${li}-${fi}-${si}" placeholder="KEY" maxlength="40">
             <input type="text" class="cat-edit-desc" id="cesd-${cid}-${li}-${fi}-${si}" placeholder="Descripción">
             <button class="cat-edit-add-btn" onclick="catAddSubVal('${cid}',${li},${fi},${si})">+ Agregar</button>
@@ -1503,11 +1500,10 @@ function buildCatEditLevel(cid, li, highlight=''){
       valsHtml = subBlocks || '<div style="font-size:11px;color:var(--txt3)">Sin sub-campos definidos</div>';
     } else {
       valsHtml = `<div class="cat-edit-free-row">✓ Campo libre — acepta cualquier valor sin validación
-        <button style="margin-left:8px;font-size:10px;color:var(--teal);background:none;border:1px solid rgba(1,51,52,.2);border-radius:4px;padding:2px 8px;cursor:pointer" onclick="catToggleFree('${cid}',${li},${fi},false)">Convertir a controlado</button>
+        ${editable?`<button style="margin-left:8px;font-size:10px;color:var(--teal);background:none;border:1px solid rgba(1,51,52,.2);border-radius:4px;padding:2px 8px;cursor:pointer" onclick="catToggleFree('${cid}',${li},${fi},false)">Convertir a controlado</button>`:''}
       </div>`;
     }
 
-    // Auto-open fields that have search matches
     const shouldOpen = highlight ? _fieldMatchesSearch(f, highlight) : isOpen;
     if(highlight && shouldOpen) catEditOpen[key] = true;
 
@@ -1519,7 +1515,7 @@ function buildCatEditLevel(cid, li, highlight=''){
         <span class="cat-edit-field-toggle ${shouldOpen?'open':''}">›</span>
       </div>
       <div class="cat-edit-field-body ${shouldOpen?'open':''}" id="cefb-${cid}-${li}-${fi}">
-        ${isAdmin()&&!isFree?`<div class="cat-edit-free-row" style="margin-bottom:8px">
+        ${editable&&!isFree?`<div class="cat-edit-free-row" style="margin-bottom:8px">
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:var(--txt3)">
             <input type="checkbox" ${isFree?'checked':''} onchange="catToggleFree('${cid}',${li},${fi},this.checked)"> Marcar como campo libre
           </label>
@@ -3162,272 +3158,305 @@ async function exportResults(){
 }
 
 // ═══════════════════════════════════════════════════
-//  AUTH & ROLES
+//  AUTH SYSTEM — 3 ROLES: master | admin | operator
 // ═══════════════════════════════════════════════════
-const CFG_KEY  = 'taxoplatform_cfg_v1';
-const SESS_KEY = 'taxoplatform_session_v1';
+const CFG_KEY  = 'txp_cfg_v1';
+const SESS_KEY = 'txp_sess_v1';
+const ROLE = { MASTER:'master', ADMIN:'admin', OPERATOR:'operator' };
 
-let currentRole = null; // 'admin' | 'operator'
-let loginMode   = 'admin';
+let SESSION = null; // { username, role, ts }
+let USERS   = [];   // cached from Sheets: [{username,hash,role,active}]
 
-function loadCfg(){ try{ const r=localStorage.getItem(CFG_KEY); return r?JSON.parse(r):null; }catch(e){ return null; } }
-function saveCfg(cfg){ localStorage.setItem(CFG_KEY,JSON.stringify(cfg)); }
-function loadSession(){ try{ const r=sessionStorage.getItem(SESS_KEY); return r?JSON.parse(r):null; }catch(e){ return null; } }
-function saveSession(s){ sessionStorage.setItem(SESS_KEY,JSON.stringify(s)); }
-function clearSession(){ sessionStorage.removeItem(SESS_KEY); }
+// ── Permissions matrix ──
+const CAN = {
+  configure:    [ROLE.MASTER],
+  manageAdmins: [ROLE.MASTER],
+  manageOps:    [ROLE.MASTER, ROLE.ADMIN],
+  editClients:  [ROLE.MASTER, ROLE.ADMIN],
+  editCatalog:  [ROLE.MASTER, ROLE.ADMIN],
+  exportCatalog:[ROLE.MASTER, ROLE.ADMIN],
+  validate:     [ROLE.MASTER, ROLE.ADMIN, ROLE.OPERATOR],
+  compare:      [ROLE.MASTER, ROLE.ADMIN],
+};
+function can(action){ return SESSION && CAN[action]?.includes(SESSION.role); }
+function isOp(){ return SESSION?.role===ROLE.OPERATOR; }
+function isMaster(){ return SESSION?.role===ROLE.MASTER; }
 
-function loginSwitchMode(mode){
-  loginMode = mode;
-  document.getElementById('tabAdmin').classList.toggle('active', mode==='admin');
-  document.getElementById('tabOperator').classList.toggle('active', mode==='operator');
-  document.getElementById('loginTitle').textContent = mode==='admin' ? 'Acceso Admin' : 'Acceso Operador';
-  document.getElementById('loginSub').textContent = mode==='admin'
-    ? 'Ingresa tu código de administrador para acceder a la configuración completa.'
-    : 'Ingresa el código que tu Admin te compartió para comenzar a validar.';
-  document.getElementById('loginErr').textContent='';
-  document.getElementById('loginCodeInput').value='';
+// ── Crypto ──
+async function hashPwd(p){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(p));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 
-function loginSubmit(){
-  const cfg = loadCfg();
-  if(!cfg){ document.getElementById('loginErr').textContent='Primero configura la plataforma →'; return; }
-  const code = document.getElementById('loginCodeInput').value.trim();
-  if(!code){ document.getElementById('loginErr').textContent='Ingresa el código'; return; }
+// ── Config storage ──
+function cfgLoad(){ try{ const r=localStorage.getItem(CFG_KEY); return r?JSON.parse(r):null; }catch(e){ return null; } }
+function cfgSave(c){ localStorage.setItem(CFG_KEY,JSON.stringify(c)); }
+function sessLoad(){ try{ const r=sessionStorage.getItem(SESS_KEY); return r?JSON.parse(r):null; }catch(e){ return null; } }
+function sessSave(s){ sessionStorage.setItem(SESS_KEY,JSON.stringify(s)); }
+function sessClear(){ sessionStorage.removeItem(SESS_KEY); }
+
+// ── Login screen ──
+function showSetup(){ document.getElementById('loginCard').style.display='none'; document.getElementById('setupCard').style.display='block'; }
+function hideSetup(){ document.getElementById('setupCard').style.display='none'; document.getElementById('loginCard').style.display='block'; }
+
+async function authSetup(){
+  const sheetId    = document.getElementById('cfgSheetId').value.trim();
+  const apiKey     = document.getElementById('cfgApiKey').value.trim();
+  const scriptUrl  = document.getElementById('cfgScriptUrl').value.trim();
+  const masterUser = document.getElementById('cfgMasterUser').value.trim().toLowerCase();
+  const masterPass = document.getElementById('cfgMasterPass').value;
+  const err = document.getElementById('setupErr');
+  if(!sheetId||!apiKey||!masterUser||!masterPass){ err.textContent='Sheet ID, API Key, usuario y contraseña son obligatorios'; return; }
+  const btn = document.querySelector('#setupCard .login-btn');
+  btn.disabled=true; btn.textContent='Configurando...';
+  try{
+    const hash = await hashPwd(masterPass);
+    const cfg  = {sheetId, apiKey, scriptUrl};
+    cfgSave(cfg);
+    const masterUser_ = {username:masterUser, hash, role:ROLE.MASTER, active:'Y'};
+    await sheetsWriteUsers(cfg,[masterUser_]);
+    await sheetsWriteData(cfg,JSON.stringify({clients:DB.clients,updatedAt:new Date().toISOString()}));
+    USERS=[masterUser_];
+    err.textContent='';
+    hideSetup();
+    await enterApp({username:masterUser, role:ROLE.MASTER, ts:Date.now()});
+  }catch(e){ err.textContent='Error: '+e.message; }
+  finally{ btn.disabled=false; btn.textContent='Guardar e iniciar sesión'; }
+}
+
+async function authLogin(){
+  const username = document.getElementById('loginUser').value.trim().toLowerCase();
+  const pass     = document.getElementById('loginPass').value;
+  const err = document.getElementById('loginErr');
   const btn = document.getElementById('loginBtn');
+  if(!username||!pass){ err.textContent='Ingresa usuario y contraseña'; return; }
+  const cfg = cfgLoad();
+  if(!cfg){ err.textContent='Sin configuración — usa "Primera vez" para configurar'; return; }
   btn.disabled=true; btn.textContent='Verificando...';
-
-  if(loginMode==='admin' && code===cfg.adminCode){
-    saveSession({role:'admin', ts:Date.now()});
-    enterApp('admin', cfg);
-  } else if(loginMode==='operator' && code===cfg.operatorCode){
-    saveSession({role:'operator', ts:Date.now()});
-    enterApp('operator', cfg);
-  } else {
-    document.getElementById('loginErr').textContent='Código incorrecto';
-    btn.disabled=false; btn.textContent='Entrar';
-  }
+  try{
+    const users = await sheetsFetchUsers(cfg);
+    USERS = users;
+    const hash  = await hashPwd(pass);
+    const found = users.find(u=>u.username===username && u.hash===hash && u.active==='Y');
+    if(!found){ err.textContent='Usuario o contraseña incorrectos'; btn.disabled=false; btn.textContent='Entrar'; return; }
+    const sess = {username:found.username, role:found.role, ts:Date.now()};
+    sessSave(sess);
+    await enterApp(sess);
+  }catch(e){ err.textContent='Error de conexión: '+e.message; btn.disabled=false; btn.textContent='Entrar'; }
 }
 
-async function enterApp(role, cfg){
-  currentRole = role;
-  document.getElementById('loginScreen').style.display='none';
-
-  // Role badge
-  const badge = document.getElementById('hdrRoleBadge');
-  badge.textContent = role==='admin' ? 'Admin' : 'Operador';
-  badge.className = 'hdr-role-badge'+(role==='admin'?' admin':'');
-  badge.style.display='block';
-
-  // Hide admin-only elements for operators
-  if(role==='operator') applyOperatorRestrictions();
-
-  // Sync from Google Sheets
-  document.getElementById('syncIndicator').style.display='flex';
-  await syncFromSheets(cfg);
-
-  // Init app
-  updateHeaderClient();
-  renderClientSidebar();
-  Object.keys(DB.clients).length>0 ? nav('clients') : nav(role==='admin'?'welcome':'validate');
+async function enterApp(sess){
+  SESSION = sess;
+  document.getElementById('loginScreen').classList.remove('visible');
+  // Header role badge
+  const roleEl = document.getElementById('hdrRole');
+  const labels = {master:'Master',admin:'Admin',operator:'Operador'};
+  roleEl.textContent = labels[sess.role]+' · '+sess.username;
+  roleEl.className   = 'hdr-role '+sess.role;
+  roleEl.style.display = 'block';
+  document.getElementById('hdrLogout').style.display='block';
+  document.getElementById('hdrSync').style.display='flex';
+  // Apply nav visibility
+  _applyNavRoles();
+  // Apply page-level role buttons
+  const btnNew=document.getElementById('btnNewClient');
+  if(btnNew) btnNew.style.display=can('editClients')?'':'none';
+  // Sync data from Sheets
+  setSyncStatus('spin','Sincronizando...');
+  const cfg = cfgLoad();
+  try{
+    const raw = await sheetsFetchData(cfg);
+    if(raw){ const p=JSON.parse(raw); if(p?.clients){ DB.clients=p.clients; storageSave(DB); } }
+    if(!USERS.length) USERS = await sheetsFetchUsers(cfg);
+    setSyncStatus('ok','Sincronizado');
+  }catch(e){ setSyncStatus('err','Sin conexión'); showToast('Usando datos locales','err'); }
+  updateHeaderClient(); renderClientSidebar();
+  // Navigate based on role
+  if(isOp()) nav('validate');
+  else nav(Object.keys(DB.clients).length>0?'clients':'welcome');
 }
 
-function applyOperatorRestrictions(){
-  // Hide these elements once DOM is ready
-  const hideSelectors=[
-    '#nav-clients + * button.page-btn.primary', // new client btn
-    '.client-icon-btn',                          // edit/delete on client items
-  ];
-  // We apply restrictions reactively in render functions instead
+function _applyNavRoles(){
+  const role = SESSION?.role;
+  // Compare: master + admin only
+  document.getElementById('nav-compare').style.display = can('compare')?'':'none';
+  // Users: master + admin only
+  document.getElementById('nav-users').style.display   = can('manageOps')?'':'none';
 }
 
-function isAdmin(){ return currentRole==='admin'; }
-function isOperator(){ return currentRole==='operator'; }
-
-function logout(){
-  clearSession();
-  currentRole=null;
-  document.getElementById('loginScreen').style.display='flex';
+function authLogout(){
+  sessClear(); SESSION=null; USERS=[];
+  document.getElementById('loginScreen').classList.add('visible');
   document.getElementById('loginCard').style.display='block';
   document.getElementById('setupCard').style.display='none';
-  document.getElementById('loginCodeInput').value='';
+  document.getElementById('loginUser').value='';
+  document.getElementById('loginPass').value='';
   document.getElementById('loginErr').textContent='';
   document.getElementById('loginBtn').disabled=false;
   document.getElementById('loginBtn').textContent='Entrar';
-  document.getElementById('hdrRoleBadge').style.display='none';
-  document.getElementById('syncIndicator').style.display='none';
-  loginSwitchMode('admin');
+  document.getElementById('hdrRole').style.display='none';
+  document.getElementById('hdrLogout').style.display='none';
+  document.getElementById('hdrSync').style.display='none';
 }
 
-function showSetupScreen(){
-  document.getElementById('loginCard').style.display='none';
-  document.getElementById('setupCard').style.display='block';
-  const cfg=loadCfg();
-  if(cfg){
-    if(cfg.sheetId) document.getElementById('setupSheetId').value=cfg.sheetId;
-    if(cfg.clientId) document.getElementById('setupClientId').value=cfg.clientId;
-    if(cfg.adminCode) document.getElementById('setupAdminCode').value=cfg.adminCode;
-    if(cfg.operatorCode) document.getElementById('setupOperatorCode').value=cfg.operatorCode;
-  }
-}
-function hideSetupScreen(){
-  document.getElementById('setupCard').style.display='none';
-  document.getElementById('loginCard').style.display='block';
-}
-
-function saveSetup(){
-  const sheetId   = document.getElementById('setupSheetId').value.trim();
-  const clientId  = document.getElementById('setupClientId').value.trim();
-  const adminCode = document.getElementById('setupAdminCode').value.trim();
-  const opCode    = document.getElementById('setupOperatorCode').value.trim();
-  const errEl     = document.getElementById('setupErr');
-  if(!sheetId||!clientId||!adminCode||!opCode){
-    errEl.textContent='Todos los campos son obligatorios'; return;
-  }
-  if(adminCode===opCode){
-    errEl.textContent='El código Admin y Operador deben ser distintos'; return;
-  }
-  saveCfg({sheetId,clientId,adminCode,operatorCode:opCode});
-  errEl.textContent='';
-  hideSetupScreen();
-  showToast('✓ Configuración guardada','ok');
+function setSyncStatus(state,label){
+  const dot=document.getElementById('hdrSyncDot'); const lbl=document.getElementById('hdrSyncLbl');
+  if(dot) dot.className='hdr-sync-dot '+(state==='ok'?'ok':state==='err'?'err':'spin');
+  if(lbl) lbl.textContent=label;
 }
 
 // ═══════════════════════════════════════════════════
-//  GOOGLE SHEETS SYNC
+//  GOOGLE SHEETS LAYER
 // ═══════════════════════════════════════════════════
-const GAPI_DISCOVERY = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
-const SHEET_NAME_DATA = 'taxoplatform_data';
-let gapiReady = false;
-let sheetsToken = null;
+const TAB_DATA  = 'txp_data';
+const TAB_USERS = 'txp_users';
+const SH_BASE   = 'https://sheets.googleapis.com/v4/spreadsheets';
 
-function setSyncStatus(state, label){
-  const dot = document.getElementById('syncDot');
-  const lbl = document.getElementById('syncLabel');
-  if(dot){ dot.className='sync-dot '+(state==='ok'?'ok':state==='err'?'err':'loading'); }
-  if(lbl) lbl.textContent = label;
+async function sheetsFetchCell(cfg,tab){
+  const r=encodeURIComponent(tab+'!A1');
+  const resp=await fetch(`${SH_BASE}/${cfg.sheetId}/values/${r}?key=${cfg.apiKey}`);
+  if(!resp.ok) throw new Error('Read '+resp.status);
+  const j=await resp.json(); return j.values?.[0]?.[0]||null;
+}
+async function sheetsFetchData(cfg){ return sheetsFetchCell(cfg,TAB_DATA); }
+async function sheetsFetchUsers(cfg){
+  const r=encodeURIComponent(TAB_USERS+'!A:D');
+  const resp=await fetch(`${SH_BASE}/${cfg.sheetId}/values/${r}?key=${cfg.apiKey}`);
+  if(!resp.ok){ if(resp.status===400||resp.status===404) return []; throw new Error('Users '+resp.status); }
+  const j=await resp.json(); const rows=j.values||[];
+  if(rows.length<2) return [];
+  return rows.slice(1).map(r=>({username:(r[0]||'').toLowerCase(),hash:r[1]||'',role:r[2]||ROLE.OPERATOR,active:r[3]||'Y'})).filter(u=>u.username);
 }
 
-async function syncFromSheets(cfg){
-  setSyncStatus('loading','Sincronizando...');
+// Write via Apps Script proxy (needed for write from browser)
+async function sheetsPost(cfg,body){
+  if(!cfg.scriptUrl){ console.warn('No Apps Script URL — local only'); return; }
+  const resp=await fetch(cfg.scriptUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!resp.ok) throw new Error('Write '+resp.status);
+}
+async function sheetsWriteData(cfg,value){ await sheetsPost(cfg,{sheetId:cfg.sheetId,tab:TAB_DATA,value}); }
+async function sheetsWriteUsers(cfg,users){
+  const rows=[['username','hash','role','active'],...users.map(u=>[u.username,u.hash,u.role,u.active])];
+  await sheetsPost(cfg,{sheetId:cfg.sheetId,tab:TAB_USERS,rows});
+  USERS=users;
+}
+
+// ─── Apps Script code (paste in Sheet → Extensions → Apps Script) ───
+// function doPost(e){
+//   const d=JSON.parse(e.postData.contents);
+//   const ss=SpreadsheetApp.openById(d.sheetId);
+//   let sh=ss.getSheetByName(d.tab)||ss.insertSheet(d.tab);
+//   if(d.rows){ sh.clearContents(); sh.getRange(1,1,d.rows.length,d.rows[0].length).setValues(d.rows); }
+//   else { sh.getRange('A1').setValue(d.value); }
+//   return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);
+// }
+
+// ═══════════════════════════════════════════════════
+//  USERS VIEW
+// ═══════════════════════════════════════════════════
+let editingUser = null;
+
+function usersOpenForm(forEdit){
+  editingUser = forEdit||null;
+  const isEdit = !!forEdit;
+  const u = isEdit ? USERS.find(u=>u.username===forEdit) : null;
+  document.getElementById('userFormTitle').textContent = isEdit?'Editar: '+forEdit:'Nuevo usuario';
+  document.getElementById('ufUsername').value  = u?.username||'';
+  document.getElementById('ufUsername').disabled = isEdit;
+  document.getElementById('ufPassword').value  = '';
+  document.getElementById('ufPassHint').style.display = isEdit?'block':'none';
+  // Role options depend on current user's role
+  const roleEl = document.getElementById('ufRole');
+  roleEl.innerHTML = '';
+  const allowed = isMaster()
+    ? [ROLE.OPERATOR,ROLE.ADMIN,ROLE.MASTER]
+    : [ROLE.OPERATOR]; // admins can only create operators
+  allowed.forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r.charAt(0).toUpperCase()+r.slice(1); if(r===(u?.role||ROLE.OPERATOR)) o.selected=true; roleEl.appendChild(o); });
+  document.getElementById('userFormErr').textContent='';
+  document.getElementById('userFormCard').style.display='block';
+  document.getElementById('ufUsername').focus();
+}
+
+function usersCloseForm(){ document.getElementById('userFormCard').style.display='none'; editingUser=null; }
+
+async function usersSave(){
+  const username = document.getElementById('ufUsername').value.trim().toLowerCase();
+  const pass     = document.getElementById('ufPassword').value;
+  const role     = document.getElementById('ufRole').value;
+  const err      = document.getElementById('userFormErr');
+  if(!username){ err.textContent='El usuario es obligatorio'; return; }
+  const cfg = cfgLoad(); if(!cfg){ err.textContent='Sin configuración'; return; }
+  // Permission check: only master can create admins/masters
+  if((role===ROLE.ADMIN||role===ROLE.MASTER) && !isMaster()){ err.textContent='Solo el Master puede crear Admins'; return; }
+  const btn=document.querySelector('#userFormCard .page-btn.primary');
+  btn.disabled=true; btn.textContent='Guardando...';
   try{
-    await loadGapi(cfg.clientId);
-    const token = await getGoogleToken(cfg.clientId);
-    sheetsToken = token;
-    const data = await readSheet(cfg.sheetId, token);
-    if(data){
-      // Merge sheets data into DB — sheets is source of truth for clients
-      const parsed = JSON.parse(data);
-      if(parsed && parsed.clients){
-        DB.clients = parsed.clients;
-        // Keep local activeClientId if still valid
-        if(DB.activeClientId && !DB.clients[DB.activeClientId]) DB.activeClientId=null;
-        storageSave(DB);
-      }
+    let users=[...USERS];
+    if(editingUser){
+      const idx=users.findIndex(u=>u.username===editingUser);
+      if(idx===-1){ err.textContent='Usuario no encontrado'; return; }
+      users[idx].role=role;
+      if(pass) users[idx].hash=await hashPwd(pass);
+    } else {
+      if(users.find(u=>u.username===username)){ err.textContent='Ese usuario ya existe'; return; }
+      if(!pass){ err.textContent='La contraseña es obligatoria'; return; }
+      users.push({username,hash:await hashPwd(pass),role,active:'Y'});
     }
-    setSyncStatus('ok','Sincronizado');
-    renderAll();
-  }catch(e){
-    setSyncStatus('err','Sin conexión');
-    showToast('Sin conexión a Google Sheets — usando datos locales','err');
-    console.warn('Sheets sync error:',e);
-  }
+    await sheetsWriteUsers(cfg,users);
+    usersCloseForm();
+    renderUsersView();
+    showToast(editingUser?'✓ Usuario actualizado':'✓ Usuario creado: '+username,'ok');
+  }catch(e){ err.textContent='Error: '+e.message; }
+  finally{ btn.disabled=false; btn.textContent='Guardar'; }
 }
 
-async function writeToSheets(){
-  const cfg = loadCfg(); if(!cfg||!sheetsToken) return;
-  try{
-    const payload = JSON.stringify({clients:DB.clients, updatedAt:new Date().toISOString()});
-    await writeSheet(cfg.sheetId, sheetsToken, payload);
-    setSyncStatus('ok','Guardado en Sheets');
-  }catch(e){
-    setSyncStatus('err','Error al guardar');
-    console.warn('Sheets write error:',e);
-  }
+async function usersToggle(username){
+  if(username===SESSION?.username){ showToast('No puedes desactivarte a ti mismo','err'); return; }
+  const cfg=cfgLoad(); if(!cfg) return;
+  const users=[...USERS];
+  const u=users.find(u=>u.username===username); if(!u) return;
+  u.active=u.active==='Y'?'N':'Y';
+  await sheetsWriteUsers(cfg,users);
+  renderUsersView();
+  showToast(u.active==='Y'?'✓ Usuario activado':'Usuario desactivado');
 }
 
-// Load GAPI script dynamically
-function loadGapi(clientId){
-  return new Promise((resolve, reject)=>{
-    if(gapiReady){ resolve(); return; }
-    if(document.getElementById('gapi-script')){
-      // Already loading — wait
-      let tries=0;
-      const interval=setInterval(()=>{
-        if(gapiReady){ clearInterval(interval); resolve(); }
-        if(++tries>30){ clearInterval(interval); reject(new Error('GAPI timeout')); }
-      },200);
-      return;
-    }
-    const s=document.createElement('script');
-    s.id='gapi-script'; s.src='https://accounts.google.com/gsi/client';
-    s.onload=()=>{ gapiReady=true; resolve(); };
-    s.onerror=()=>reject(new Error('GAPI load failed'));
-    document.head.appendChild(s);
-  });
+async function usersDelete(username){
+  if(username===SESSION?.username){ showToast('No puedes eliminar tu propia cuenta','err'); return; }
+  if(!confirm('¿Eliminar al usuario "'+username+'"?')) return;
+  const cfg=cfgLoad(); if(!cfg) return;
+  const users=USERS.filter(u=>u.username!==username);
+  await sheetsWriteUsers(cfg,users);
+  renderUsersView();
+  showToast('Usuario eliminado: '+username);
 }
 
-// Get OAuth token via Google Identity Services (popup)
-function getGoogleToken(clientId){
-  return new Promise((resolve, reject)=>{
-    if(!window.google){ reject(new Error('Google Identity not loaded')); return; }
-    const client = window.google.accounts.oauth2.initTokenClient({
-      client_id: clientId,
-      scope: 'https://www.googleapis.com/auth/spreadsheets',
-      callback:(resp)=>{
-        if(resp.error){ reject(new Error(resp.error)); return; }
-        resolve(resp.access_token);
-      }
-    });
-    client.requestAccessToken({prompt:''});
-  });
-}
+function renderUsersView(){
+  const wrap=document.getElementById('usersContent'); if(!wrap) return;
+  const badge=document.getElementById('usersBadge');
+  const users=USERS;
+  if(badge) badge.textContent=users.length+' usuario'+(users.length!==1?'s':'');
+  if(!users.length){ wrap.innerHTML=`<div class="empty-state" style="min-height:200px"><div class="empty-icon">👤</div><div class="empty-title">Sin usuarios</div></div>`; return; }
 
-// Read cell A1 from SHEET_NAME_DATA tab
-async function readSheet(sheetId, token){
-  const range = encodeURIComponent(SHEET_NAME_DATA+'!A1');
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}`;
-  const resp = await fetch(url,{headers:{Authorization:'Bearer '+token}});
-  if(!resp.ok){ if(resp.status===404) return null; throw new Error('Read failed: '+resp.status); }
-  const json = await resp.json();
-  return json.values?.[0]?.[0] || null;
+  const roleLabel={master:'Master',admin:'Admin',operator:'Operador'};
+  wrap.innerHTML=`<div style="border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)">
+    <table class="users-tbl">
+      <thead><tr><th>Usuario</th><th>Rol</th><th>Estado</th><th style="width:160px"></th></tr></thead>
+      <tbody>${users.map(u=>`<tr>
+        <td><span style="font-family:var(--fm);font-size:12px;font-weight:500">${esc(u.username)}</span>${u.username===SESSION?.username?'<span style="font-size:10px;color:var(--txt3);margin-left:6px">(tú)</span>':''}</td>
+        <td><span class="role-pill ${u.role}">${roleLabel[u.role]||u.role}</span></td>
+        <td><span class="active-pill ${u.active==='Y'?'on':'off'}">${u.active==='Y'?'Activo':'Inactivo'}</span></td>
+        <td style="display:flex;gap:5px;justify-content:flex-end">
+          ${(isMaster()||(can('manageOps')&&u.role===ROLE.OPERATOR))?`<button class="page-btn" style="padding:4px 9px;font-size:10px" onclick="usersOpenForm('${esc(u.username)}')">✎</button>`:''}
+          ${u.username!==SESSION?.username?`<button class="page-btn" style="padding:4px 9px;font-size:10px" onclick="usersToggle('${esc(u.username)}')">${u.active==='Y'?'Desactivar':'Activar'}</button>`:''}
+          ${isMaster()&&u.username!==SESSION?.username?`<button class="page-btn" style="padding:4px 9px;font-size:10px;color:var(--err);border-color:rgba(204,34,0,.2)" onclick="usersDelete('${esc(u.username)}')">✕</button>`:''}
+        </td>
+      </tr>`).join('')}
+      </tbody>
+    </table>
+    <div style="padding:10px 16px;background:var(--s1);border-top:1px solid var(--bdr);font-size:11px;color:var(--txt3)">Las contraseñas se almacenan como hash SHA-256. Nadie puede ver la contraseña original.</div>
+  </div>`;
 }
-
-// Write data to A1 of SHEET_NAME_DATA tab (creates tab if needed)
-async function writeSheet(sheetId, token, data){
-  // First ensure the sheet/tab exists
-  await ensureSheetTab(sheetId, token);
-  const range = encodeURIComponent(SHEET_NAME_DATA+'!A1');
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?valueInputOption=RAW`;
-  const resp = await fetch(url,{
-    method:'PUT',
-    headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
-    body:JSON.stringify({values:[[data]]})
-  });
-  if(!resp.ok) throw new Error('Write failed: '+resp.status);
-}
-
-async function ensureSheetTab(sheetId, token){
-  // Get existing sheets
-  const metaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?fields=sheets.properties.title`;
-  const metaResp = await fetch(metaUrl,{headers:{Authorization:'Bearer '+token}});
-  if(!metaResp.ok) return;
-  const meta = await metaResp.json();
-  const exists = (meta.sheets||[]).some(s=>s.properties?.title===SHEET_NAME_DATA);
-  if(exists) return;
-  // Create tab
-  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}:batchUpdate`,{
-    method:'POST',
-    headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
-    body:JSON.stringify({requests:[{addSheet:{properties:{title:SHEET_NAME_DATA}}}]})
-  });
-}
-
-// ═══════════════════════════════════════════════════
-//  OVERRIDE saveClientToDB TO ALSO WRITE TO SHEETS
-// ═══════════════════════════════════════════════════
-const _origSaveClientToDB = saveClientToDB;
-// We redefine saveClientToDB to also push to Sheets when admin
-// (the original is already defined above, we override here)
 
 // ═══════════════════════════════════════════════════
 //  UTILS
@@ -3444,16 +3473,16 @@ document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click
 //  INIT
 // ═══════════════════════════════════════════════════
 (function init(){
-  // Check for existing session
-  const session = loadSession();
-  const cfg     = loadCfg();
-  if(session && cfg && (Date.now()-session.ts < 8*60*60*1000)){
-    // Session valid (8h) — enter directly
-    enterApp(session.role, cfg);
+  // Try to restore session (valid 8h)
+  const sess=sessLoad();
+  const cfg=cfgLoad();
+  if(sess && cfg && (Date.now()-sess.ts < 8*60*60*1000)){
+    enterApp(sess);
   } else {
-    // Show login screen
-    document.getElementById('loginScreen').style.display='flex';
+    document.getElementById('loginScreen').classList.add('visible');
   }
+  // Apply can() to page-level buttons once roles are set
+  // (done inside enterApp after SESSION is set)
 })();
 </script>
 </body>
