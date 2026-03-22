@@ -1,0 +1,3460 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TaxoPlatform</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --orange:#FF5C1A;--teal:#013334;--navy:#080843;
+  --bg:#FFFFFF;--s1:#F7F8FA;--s2:#EDF0F4;--s3:#E2E6EC;
+  --bdr:#D4D9E2;--bdr2:#BEC5D1;
+  --ok:#0A7655;--err:#CC2200;--warn:#B45309;--info:#1877F2;
+  --txt:#0D0D1A;--txt2:#3D4A60;--txt3:#7A8799;
+  --fn:'DM Sans',sans-serif;--fm:'DM Mono',monospace;
+  --r:8px;--r2:12px;--shadow:0 1px 4px rgba(0,0,0,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--s1);color:var(--txt);font-family:var(--fn);font-size:14px;min-height:100vh}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--s1)}
+::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--teal)}
+
+/* ── HEADER ── */
+.hdr{background:var(--teal);border-bottom:3px solid var(--orange);height:56px;display:flex;align-items:center;padding:0 20px;gap:14px;position:sticky;top:0;z-index:300;box-shadow:0 2px 12px rgba(1,51,52,.2)}
+.hdr-logo{font-family:var(--fm);font-size:14px;font-weight:500;color:var(--orange);letter-spacing:.08em;white-space:nowrap}
+.hdr-logo span{color:rgba(255,255,255,.4)}
+.hdr-client-pill{display:flex;align-items:center;gap:7px;padding:4px 12px 4px 8px;border-radius:20px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);cursor:pointer;transition:all .15s;font-size:12px;color:rgba(255,255,255,.8);max-width:240px}
+.hdr-client-pill:hover{border-color:var(--orange);color:#fff}
+.hdr-client-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.hdr-client-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hdr-sep{flex:1}
+.hdr-btn{padding:6px 14px;border-radius:6px;font-family:var(--fm);font-size:11px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:rgba(255,255,255,.85);transition:all .15s;white-space:nowrap}
+.hdr-btn:hover{border-color:var(--orange);color:#fff;background:rgba(255,92,26,.15)}
+.hdr-btn.primary{background:var(--orange);color:#fff;border-color:var(--orange);font-weight:600}
+.hdr-btn.primary:hover{background:#e04c0f}
+.hdr-btn:disabled{opacity:.3;cursor:not-allowed}
+
+/* ── SHELL ── */
+.app{display:flex;height:calc(100vh - 56px)}
+.sidebar{width:260px;flex-shrink:0;background:#fff;border-right:1px solid var(--bdr);overflow-y:auto;display:flex;flex-direction:column}
+.main{flex:1;overflow-y:auto;background:var(--s1)}
+.view{display:none;padding:24px}.view.active{display:block}
+
+/* ── SIDEBAR ── */
+.sb-section{padding:12px 14px;border-bottom:1px solid var(--bdr)}
+.sb-label{font-family:var(--fm);font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--txt3);margin-bottom:8px;font-weight:500}
+.sb-btn{width:100%;padding:7px 10px;border-radius:6px;border:1px solid var(--bdr);background:#fff;color:var(--txt2);font-family:var(--fm);font-size:11px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:7px;transition:all .15s;margin-top:4px}
+.sb-btn:first-child{margin-top:0}
+.sb-btn:hover{border-color:var(--teal);color:var(--teal);background:rgba(1,51,52,.04)}
+.sb-btn.active{border-color:var(--teal);color:var(--teal);background:rgba(1,51,52,.07);font-weight:500}
+.client-list{display:flex;flex-direction:column;gap:3px}
+.client-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;border:1px solid transparent;cursor:pointer;transition:all .15s}
+.client-item:hover{background:var(--s2);border-color:var(--bdr)}
+.client-item.active{background:rgba(1,51,52,.07);border-color:rgba(1,51,52,.2)}
+.client-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.client-info{flex:1;min-width:0}
+.client-name{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.client-meta{font-family:var(--fm);font-size:10px;color:var(--txt3);margin-top:1px}
+.client-actions{display:flex;gap:2px;opacity:0;transition:opacity .15s}
+.client-item:hover .client-actions{opacity:1}
+.client-icon-btn{width:22px;height:22px;border:none;background:none;cursor:pointer;color:var(--txt3);border-radius:4px;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.client-icon-btn:hover{background:var(--s3);color:var(--txt)}
+.client-icon-btn.del:hover{background:rgba(204,34,0,.1);color:var(--err)}
+.no-clients{padding:20px 14px;text-align:center;color:var(--txt3);font-size:12px;line-height:1.5}
+.add-dashed-btn{width:100%;padding:8px;border:2px dashed var(--bdr);border-radius:var(--r);background:transparent;color:var(--txt3);font-family:var(--fm);font-size:11px;cursor:pointer;transition:all .15s;margin-top:8px}
+.add-dashed-btn:hover{border-color:var(--teal);color:var(--teal);background:rgba(1,51,52,.03)}
+
+/* ── PAGE HEADER ── */
+.page-hdr{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.page-title{font-family:var(--fm);font-size:15px;font-weight:500;color:var(--teal)}
+.page-badge{font-family:var(--fm);font-size:10px;padding:3px 9px;border-radius:20px;border:1px solid var(--bdr);color:var(--txt2);background:#fff}
+.page-sep{flex:1}
+.page-btn{padding:7px 14px;border-radius:6px;border:1px solid var(--bdr);background:#fff;color:var(--txt2);font-family:var(--fm);font-size:11px;cursor:pointer;transition:all .15s}
+.page-btn:hover{border-color:var(--teal);color:var(--teal)}
+.page-btn.primary{background:var(--orange);color:#fff;border-color:var(--orange);font-weight:600}
+.page-btn.primary:hover{background:#e04c0f}
+.page-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ── EMPTY STATE ── */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 140px);text-align:center;gap:16px}
+.empty-icon{font-size:48px;line-height:1;opacity:.3}
+.empty-title{font-family:var(--fm);font-size:18px;font-weight:500;color:var(--teal)}
+.empty-sub{font-size:13px;color:var(--txt3);max-width:360px;line-height:1.6}
+.empty-cta{margin-top:8px;padding:10px 24px;border-radius:var(--r);background:var(--orange);color:#fff;border:none;font-family:var(--fm);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.empty-cta:hover{background:#e04c0f;transform:translateY(-1px)}
+
+/* ── WIZARD ── */
+.wizard-wrap{max-width:800px;margin:0 auto}
+.wizard-steps{display:flex;align-items:center;gap:0;margin-bottom:28px}
+.wstep{display:flex;align-items:center;gap:8px;flex:1}
+.wstep-num{width:28px;height:28px;border-radius:50%;border:2px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-family:var(--fm);font-size:11px;font-weight:500;color:var(--txt3);flex-shrink:0;background:#fff;transition:all .2s;position:relative;z-index:1}
+.wstep.done .wstep-num{background:var(--ok);border-color:var(--ok);color:#fff}
+.wstep.active .wstep-num{background:var(--teal);border-color:var(--teal);color:#fff}
+.wstep-label{font-size:11px;color:var(--txt3);transition:color .2s;white-space:nowrap}
+.wstep.active .wstep-label{color:var(--teal);font-weight:500}
+.wstep.done .wstep-label{color:var(--ok)}
+.wstep-line{flex:1;height:2px;background:var(--bdr);margin:0 8px;transition:background .2s}
+.wstep.done+.wstep .wstep-line,.wstep.done .wstep-line{background:var(--ok)}
+
+.wizard-card{background:#fff;border:1px solid var(--bdr);border-radius:var(--r2);padding:28px 32px;box-shadow:var(--shadow)}
+.wizard-card-title{font-family:var(--fm);font-size:13px;font-weight:500;color:var(--teal);margin-bottom:4px}
+.wizard-card-sub{font-size:12px;color:var(--txt3);margin-bottom:24px;line-height:1.5}
+.wizard-nav{display:flex;justify-content:space-between;align-items:center;margin-top:24px;padding-top:20px;border-top:1px solid var(--bdr)}
+.wizard-nav-info{font-size:11px;color:var(--txt3);font-family:var(--fm)}
+
+/* ── FORMS ── */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.form-row.single{grid-template-columns:1fr}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-label{font-size:11px;font-weight:500;color:var(--txt2);font-family:var(--fm)}
+.form-label .req{color:var(--err);margin-left:2px}
+.form-input{padding:8px 11px;border:1px solid var(--bdr);border-radius:var(--r);font-family:var(--fn);font-size:13px;color:var(--txt);background:#fff;outline:none;transition:border-color .15s}
+.form-input:focus{border-color:var(--teal)}
+.form-input.err{border-color:var(--err)}
+.form-hint{font-size:10px;color:var(--txt3);margin-top:2px}
+
+/* Separator selector */
+.sep-grid{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.sep-opt{padding:7px 14px;border:2px solid var(--bdr);border-radius:var(--r);text-align:center;cursor:pointer;transition:all .15s;background:#fff;min-width:56px}
+.sep-opt:hover{border-color:var(--bdr2)}
+.sep-opt.selected{border-color:var(--teal);background:rgba(1,51,52,.06)}
+.sep-opt-key{font-family:var(--fm);font-size:16px;font-weight:500;color:var(--txt);line-height:1}
+.sep-opt-label{font-size:9px;color:var(--txt3);margin-top:2px}
+.sep-custom-wrap{display:flex;align-items:center;gap:6px;margin-top:6px}
+.sep-custom-input{width:70px;padding:6px 10px;border:1px solid var(--bdr);border-radius:var(--r);font-family:var(--fm);font-size:14px;text-align:center;outline:none;transition:border-color .15s}
+.sep-custom-input:focus{border-color:var(--teal)}
+
+/* Platform chips */
+.plat-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.plat-chip{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:20px;border:1px solid var(--bdr);background:#fff;font-size:12px;color:var(--txt2);cursor:pointer;user-select:none;transition:all .15s}
+.plat-chip input{display:none}
+.plat-chip.checked{font-weight:500}
+.plat-chip[data-plat="meta"].checked{color:#1877F2;background:rgba(24,119,242,.07);border-color:rgba(24,119,242,.35)}
+.plat-chip[data-plat="google"].checked{color:#EA4335;background:rgba(234,67,53,.07);border-color:rgba(234,67,53,.35)}
+.plat-chip[data-plat="tiktok"].checked{color:#333;background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.25)}
+.plat-chip[data-plat="dv360"].checked{color:#4285F4;background:rgba(66,133,244,.07);border-color:rgba(66,133,244,.35)}
+.plat-chip[data-plat="twitter"].checked{color:#1DA1F2;background:rgba(29,161,242,.07);border-color:rgba(29,161,242,.35)}
+.plat-chip.custom.checked{color:var(--teal);background:rgba(1,51,52,.07);border-color:rgba(1,51,52,.35)}
+.plat-add-wrap{display:flex;align-items:center;gap:6px;margin-top:6px}
+.plat-add-input{padding:5px 10px;border:1px solid var(--bdr);border-radius:20px;font-size:12px;outline:none;transition:border-color .15s;width:160px}
+.plat-add-input:focus{border-color:var(--teal)}
+.plat-add-btn{padding:5px 12px;border-radius:20px;border:1px dashed var(--bdr);background:#fff;color:var(--txt3);font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.plat-add-btn:hover{border-color:var(--teal);color:var(--teal)}
+
+/* Color swatches */
+.color-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.color-swatch{width:26px;height:26px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all .15s;flex-shrink:0}
+.color-swatch.selected{border-color:#fff;box-shadow:0 0 0 2px currentColor,0 2px 6px rgba(0,0,0,.2)}
+
+/* ── STEP 2: LEVELS ── */
+.levels-list{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.level-row{background:var(--s1);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden}
+.level-row-main{display:flex;align-items:center;gap:10px;padding:11px 14px}
+.level-num{font-family:var(--fm);font-size:11px;color:var(--txt3);width:18px;text-align:center;flex-shrink:0}
+.field-count-input{width:64px;padding:6px 8px;border:1px solid var(--bdr);border-radius:var(--r);font-family:var(--fm);font-size:12px;text-align:center;outline:none;transition:border-color .15s;background:#fff}
+.field-count-input:focus{border-color:var(--teal)}
+.sep-mini-select{padding:6px 8px;border:1px solid var(--bdr);border-radius:var(--r);font-family:var(--fm);font-size:12px;outline:none;transition:border-color .15s;background:#fff;cursor:pointer;width:72px}
+.sep-mini-select:focus{border-color:var(--teal)}
+.sep-mini-custom{width:56px;padding:6px 8px;border:1px solid var(--bdr);border-radius:var(--r);font-family:var(--fm);font-size:13px;text-align:center;outline:none;transition:border-color .15s;background:#fff}
+.sep-mini-custom:focus{border-color:var(--teal)}
+.level-del{width:26px;height:26px;border:none;background:none;cursor:pointer;color:var(--txt3);border-radius:4px;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.level-del:hover{background:rgba(204,34,0,.1);color:var(--err)}
+
+/* ── STEP 3: LEVEL SUB-WIZARD ── */
+.level-subnav{
+  display:flex;align-items:center;gap:0;padding:20px 28px 0;
+  border-bottom:1px solid var(--bdr);background:var(--s1);
+  overflow-x:auto
+}
+.lsnav-step{
+  display:flex;align-items:center;gap:6px;padding:10px 0;
+  border-bottom:3px solid transparent;margin-bottom:-1px;
+  cursor:pointer;transition:all .15s;white-space:nowrap;padding-right:20px
+}
+.lsnav-step:last-child{padding-right:0}
+.lsnav-step:hover .lsnav-num{border-color:var(--bdr2)}
+.lsnav-step.active{border-bottom-color:var(--teal)}
+.lsnav-step.done{border-bottom-color:var(--ok)}
+.lsnav-num{
+  width:24px;height:24px;border-radius:50%;border:2px solid var(--bdr);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fm);font-size:10px;font-weight:500;color:var(--txt3);
+  flex-shrink:0;transition:all .2s;background:#fff
+}
+.lsnav-step.active .lsnav-num{background:var(--teal);border-color:var(--teal);color:#fff}
+.lsnav-step.done .lsnav-num{background:var(--ok);border-color:var(--ok);color:#fff}
+.lsnav-info{display:flex;flex-direction:column}
+.lsnav-label{font-family:var(--fm);font-size:11px;font-weight:500;color:var(--txt2);transition:color .15s}
+.lsnav-step.active .lsnav-label{color:var(--teal)}
+.lsnav-step.done .lsnav-label{color:var(--ok)}
+.lsnav-status{font-size:10px;color:var(--txt3);margin-top:1px}
+.lsnav-step.done .lsnav-status{color:var(--ok)}
+.lsnav-sep{width:24px;height:2px;background:var(--bdr);flex-shrink:0;margin:0 2px 0 0}
+.lsnav-sep.done{background:var(--ok)}
+
+.level-panel-body{padding:20px 24px}
+.level-context-bar{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;
+  background:rgba(1,51,52,.04);border:1px solid rgba(1,51,52,.1);
+  border-radius:var(--r);margin-bottom:16px;font-size:12px
+}
+.level-context-name{font-family:var(--fm);font-weight:500;color:var(--teal);font-size:13px}
+.level-context-meta{color:var(--txt3)}
+.level-context-sep{
+  font-family:var(--fm);font-size:11px;padding:3px 10px;border-radius:4px;
+  background:rgba(255,92,26,.1);color:var(--orange);border:1px solid rgba(255,92,26,.2)
+}
+
+/* Fields table */
+.fields-table-wrap{overflow-x:auto}
+.fields-table{width:100%;border-collapse:collapse;font-size:12px}
+.fields-table th{background:var(--teal);color:rgba(255,255,255,.85);padding:8px 10px;text-align:left;font-family:var(--fm);font-size:10px;font-weight:500;letter-spacing:.05em;white-space:nowrap}
+.fields-table th:first-child{border-radius:0}
+.fields-table td{padding:7px 10px;border-bottom:1px solid var(--bdr);vertical-align:middle}
+.fields-table tr:last-child td{border-bottom:none}
+.fields-table tr:hover td{background:var(--s1)}
+.pos-cell{font-family:var(--fm);font-size:11px;color:var(--txt3);text-align:center;font-weight:500;width:40px}
+.ft-input{width:100%;padding:5px 8px;border:1px solid var(--bdr);border-radius:5px;font-family:var(--fn);font-size:12px;outline:none;transition:border-color .15s;background:#fff}
+.ft-input:focus{border-color:var(--teal)}
+.ft-toggle{appearance:none;width:32px;height:18px;border-radius:9px;background:var(--bdr2);cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.ft-toggle:checked{background:var(--teal)}
+.ft-toggle::after{content:'';position:absolute;width:14px;height:14px;border-radius:50%;background:#fff;top:2px;left:2px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.ft-toggle:checked::after{transform:translateX(14px)}
+
+/* Sub-taxonomy inline config */
+.sub-tax-row{display:flex;align-items:center;gap:8px;padding:6px 8px;background:rgba(1,51,52,.04);border-radius:6px;margin-top:4px}
+.sub-tax-label{font-size:10px;color:var(--teal);font-family:var(--fm);white-space:nowrap}
+.sub-tax-toggle{appearance:none;width:26px;height:15px;border-radius:8px;background:var(--bdr2);cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.sub-tax-toggle:checked{background:var(--orange)}
+.sub-tax-toggle::after{content:'';position:absolute;width:11px;height:11px;border-radius:50%;background:#fff;top:2px;left:2px;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.sub-tax-toggle:checked::after{transform:translateX(11px)}
+.sub-tax-config{display:flex;align-items:center;gap:6px}
+.sub-sep-input{width:44px;padding:3px 6px;border:1px solid var(--bdr);border-radius:4px;font-family:var(--fm);font-size:12px;text-align:center;outline:none;transition:border-color .15s}
+.sub-sep-input:focus{border-color:var(--orange)}
+.sub-count-input{width:52px;padding:3px 6px;border:1px solid var(--bdr);border-radius:4px;font-family:var(--fm);font-size:12px;text-align:center;outline:none;transition:border-color .15s}
+.sub-count-input:focus{border-color:var(--orange)}
+.sub-count-label{font-size:10px;color:var(--txt3)}
+
+/* Values inline */
+.vals-cell{display:flex;flex-direction:column;gap:4px}
+.vals-chips{display:flex;flex-wrap:wrap;gap:3px;min-height:18px}
+.val-chip{font-family:var(--fm);font-size:10px;padding:2px 8px;border-radius:4px;background:var(--s2);border:1px solid var(--bdr);color:var(--txt2);cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:3px}
+.val-chip:hover{background:rgba(204,34,0,.08);border-color:rgba(204,34,0,.3);color:var(--err)}
+.val-chip::after{content:'×';font-size:11px;opacity:.5}
+.add-val-inline{display:flex;gap:4px;align-items:center;margin-top:2px}
+.av-key{width:80px;padding:4px 7px;border:1px solid var(--bdr);border-radius:5px;font-family:var(--fm);font-size:11px;text-transform:uppercase;outline:none;transition:border-color .15s}
+.av-key:focus{border-color:var(--teal)}
+.av-desc{flex:1;padding:4px 7px;border:1px solid var(--bdr);border-radius:5px;font-size:11px;outline:none;transition:border-color .15s}
+.av-desc:focus{border-color:var(--teal)}
+.av-add{padding:4px 10px;border:none;border-radius:5px;background:var(--teal);color:#fff;font-family:var(--fm);font-size:10px;cursor:pointer;white-space:nowrap;transition:background .15s}
+.av-add:hover{background:#024a4b}
+
+/* ── STEP 4: CATALOGS ── */
+.step4-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:20px}
+.catalog-card{background:#fff;border:1px solid var(--bdr);border-radius:var(--r2);padding:20px;box-shadow:var(--shadow)}
+.catalog-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.catalog-card-name{font-family:var(--fm);font-size:13px;font-weight:500;color:var(--teal)}
+.catalog-card-meta{font-size:11px;color:var(--txt3);margin-bottom:14px}
+.catalog-status-bar{height:4px;background:var(--s2);border-radius:2px;margin-bottom:14px;overflow:hidden}
+.catalog-status-fill{height:100%;border-radius:2px;transition:width .4s}
+.catalog-card-actions{display:flex;gap:6px}
+.cat-btn{flex:1;padding:7px;border-radius:6px;border:1px solid var(--bdr);background:#fff;color:var(--txt2);font-family:var(--fm);font-size:10px;cursor:pointer;text-align:center;transition:all .15s;white-space:nowrap}
+.cat-btn:hover{border-color:var(--teal);color:var(--teal)}
+.cat-btn.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+.cat-btn.primary:hover{background:#024a4b}
+.catalog-upload-input{display:none}
+
+.step4-summary{background:rgba(1,51,52,.04);border:1px solid rgba(1,51,52,.15);border-radius:var(--r);padding:14px 18px;margin-bottom:20px;font-size:12px;color:var(--txt2);line-height:1.6}
+.step4-summary strong{color:var(--teal)}
+
+/* ── VALIDATION VIEW ── */
+.no-client-warn{background:rgba(180,83,9,.06);border:1px solid rgba(180,83,9,.25);border-radius:var(--r);padding:12px 16px;margin-bottom:20px;font-size:12px;color:var(--warn);display:flex;align-items:center;gap:8px}
+.upload-zone{border:2px dashed var(--bdr);border-radius:var(--r2);padding:36px 20px;text-align:center;cursor:pointer;transition:all .2s;position:relative;background:#fff;max-width:560px;margin:0 auto 24px}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--orange);background:rgba(255,92,26,.02)}
+.upload-zone-inner{pointer-events:none}
+.upload-icon{font-size:32px;margin-bottom:8px}
+.upload-title{font-family:var(--fm);font-size:13px;font-weight:500;color:var(--teal);margin-bottom:4px}
+.upload-sub{font-size:12px;color:var(--txt3)}
+.upload-input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.sum-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.sum-card{background:#fff;border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow)}
+.sum-card.c-err{border-color:rgba(204,34,0,.2);background:rgba(204,34,0,.03)}
+.sum-card.c-ok{border-color:rgba(10,118,85,.2);background:rgba(10,118,85,.03)}
+.sum-card.c-acc{border-color:rgba(1,51,52,.2);background:rgba(1,51,52,.03)}
+.sum-num{font-family:var(--fm);font-size:28px;font-weight:500;line-height:1}
+.n-err{color:var(--err)}.n-ok{color:var(--ok)}.n-acc{color:var(--teal)}.n-warn{color:var(--orange)}
+.sum-lbl{font-size:11px;color:var(--txt2);margin-top:3px}
+.sum-bar{height:3px;background:var(--s2);border-radius:2px;margin-top:8px;overflow:hidden}
+.sum-bar-fill{height:100%;border-radius:2px;transition:width .5s}
+.result-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.result-tab{padding:6px 14px;border-radius:20px;border:1px solid var(--bdr);background:#fff;color:var(--txt2);font-family:var(--fm);font-size:11px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px}
+.result-tab.active{background:var(--teal);border-color:var(--teal);color:#fff}
+.rtab-badge{font-size:9px;padding:1px 5px;border-radius:8px;background:rgba(255,255,255,.2);color:#fff}
+.result-tab:not(.active) .rtab-badge{background:var(--s2);color:var(--txt3)}
+.result-tab:not(.active) .rtab-badge.err{background:rgba(204,34,0,.1);color:var(--err)}
+.filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.filter-btn{padding:5px 12px;border-radius:20px;border:1px solid var(--bdr);background:#fff;color:var(--txt2);font-family:var(--fm);font-size:11px;cursor:pointer;transition:all .15s}
+.filter-btn:hover{border-color:var(--bdr2)}
+.filter-btn.active{background:var(--teal);border-color:var(--teal);color:#fff}
+.filter-btn.active.err-f{background:var(--err);border-color:var(--err)}
+.filter-btn.active.ok-f{background:var(--ok);border-color:var(--ok)}
+.filter-search{padding:5px 11px;border:1px solid var(--bdr);border-radius:20px;font-family:var(--fn);font-size:12px;outline:none;transition:border-color .15s;min-width:200px;background:#fff;color:var(--txt)}
+.filter-search:focus{border-color:var(--teal)}
+.filter-count{font-family:var(--fm);font-size:11px;color:var(--txt3);margin-left:auto}
+.tbl-wrap{background:#fff;border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+.results-table{width:100%;border-collapse:collapse;font-size:12px}
+.results-table th{background:var(--teal);color:rgba(255,255,255,.85);padding:9px 11px;text-align:left;font-family:var(--fm);font-size:10px;font-weight:500;letter-spacing:.05em;white-space:nowrap;position:sticky;top:0}
+.results-table td{padding:8px 11px;border-bottom:1px solid var(--bdr);vertical-align:top}
+.results-table tr.row-err td{background:rgba(204,34,0,.02)}
+.results-table tr.row-ok td{background:#fff}
+.results-table tr:last-child td{border-bottom:none}
+.results-table tr:hover td{background:rgba(1,51,52,.03)!important}
+.tx{font-family:var(--fm);font-size:11px;word-break:break-all}
+.tp{display:inline-flex;align-items:center}
+.tp-ok{color:var(--ok)}.tp-err{color:var(--err);text-decoration:underline wavy;text-decoration-color:var(--err)}
+.tp-free{color:var(--acc2)}.tp-sub{color:#7C3AED;font-style:italic}
+.tp-sep{color:var(--txt3);margin:0 1px;font-size:10px;opacity:.5}
+.tp-sep-sub{color:var(--orange);margin:0 1px;font-size:10px;opacity:.7}
+.badge{font-family:var(--fm);font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid;white-space:nowrap}
+.b-ok{background:rgba(10,118,85,.08);border-color:rgba(10,118,85,.25);color:var(--ok)}
+.b-err{background:rgba(204,34,0,.08);border-color:rgba(204,34,0,.25);color:var(--err)}
+.b-plat{background:var(--s1);border-color:var(--bdr);color:var(--txt2)}
+.err-wrap{min-width:160px;max-width:220px}
+.err-item{margin-bottom:6px}
+.err-item:last-child{margin-bottom:0}
+.err-pos{font-family:var(--fm);font-size:10px;color:var(--txt3);margin-bottom:2px}
+.err-found{font-size:11px;color:var(--err)}
+.field-select{width:100%;padding:4px 7px;border:1px solid rgba(204,34,0,.3);border-radius:4px;font-size:11px;background:#fff;color:var(--txt);margin-top:3px;outline:none;cursor:pointer}
+.fix-cell{cursor:pointer;position:relative;display:inline-flex;align-items:center;gap:6px;padding:3px 7px;border-radius:4px;background:rgba(10,118,85,.06);border:1px solid rgba(10,118,85,.2)}
+.fix-cell:hover{background:rgba(10,118,85,.12)}
+.copy-hint{font-family:var(--fm);font-size:9px;color:var(--txt3);opacity:0;transition:opacity .2s}
+.fix-cell:hover .copy-hint{opacity:1}
+.copy-hint.copied{color:var(--ok);opacity:1}
+.pagination{display:flex;gap:4px;justify-content:center;padding:14px;background:#fff;border-top:1px solid var(--bdr)}
+.pg-btn{min-width:32px;height:28px;padding:0 8px;border:1px solid var(--bdr);border-radius:5px;background:#fff;color:var(--txt2);font-family:var(--fm);font-size:11px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center}
+.pg-btn:hover{border-color:var(--teal);color:var(--teal)}
+.pg-btn.active{background:var(--teal);border-color:var(--teal);color:#fff}
+.pg-btn:disabled{opacity:.3;cursor:not-allowed}
+
+/* ── E1: MODO REVISIÓN RÁPIDA ── */
+.review-overlay{
+  position:fixed;inset:0;background:var(--s1);z-index:250;
+  display:none;flex-direction:column;overflow:hidden
+}
+.review-overlay.active{display:flex}
+.review-hdr{
+  background:var(--teal);border-bottom:3px solid var(--orange);
+  height:56px;display:flex;align-items:center;padding:0 24px;gap:16px;
+  flex-shrink:0
+}
+.review-hdr-title{font-family:var(--fm);font-size:13px;font-weight:500;color:#fff}
+.review-hdr-prog{
+  font-family:var(--fm);font-size:11px;color:rgba(255,255,255,.6);
+  padding:3px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.2)
+}
+.review-hdr-back{
+  margin-left:auto;padding:6px 14px;border-radius:6px;border:1px solid rgba(255,255,255,.25);
+  background:rgba(255,255,255,.1);color:rgba(255,255,255,.85);font-family:var(--fm);
+  font-size:11px;cursor:pointer;transition:all .15s
+}
+.review-hdr-back:hover{border-color:var(--orange);color:#fff}
+
+.review-body{
+  flex:1;overflow-y:auto;display:flex;align-items:flex-start;
+  justify-content:center;padding:32px 24px
+}
+.review-card{
+  background:#fff;border:1px solid var(--bdr);border-radius:var(--r2);
+  padding:28px 32px;width:100%;max-width:680px;box-shadow:var(--shadow)
+}
+.review-taxonomy-display{
+  font-family:var(--fm);font-size:13px;line-height:1.8;
+  padding:14px 16px;background:var(--s1);border-radius:var(--r);
+  border:1px solid var(--bdr);margin-bottom:20px;word-break:break-all
+}
+.review-errors-list{display:flex;flex-direction:column;gap:12px;margin-bottom:24px}
+.review-error-block{
+  border:1px solid rgba(204,34,0,.2);border-radius:var(--r);
+  overflow:hidden
+}
+.review-error-header{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;background:rgba(204,34,0,.04);border-bottom:1px solid rgba(204,34,0,.1)
+}
+.review-error-pos{font-family:var(--fm);font-size:10px;color:var(--txt3)}
+.review-error-field{font-family:var(--fm);font-size:12px;font-weight:500;color:var(--txt)}
+.review-error-found{
+  font-family:var(--fm);font-size:11px;padding:2px 8px;border-radius:4px;
+  background:rgba(204,34,0,.08);border:1px solid rgba(204,34,0,.2);color:var(--err)
+}
+.review-error-body{padding:12px 14px;display:flex;align-items:center;gap:10px}
+.review-select{
+  flex:1;padding:8px 10px;border:1px solid var(--bdr);border-radius:var(--r);
+  font-family:var(--fn);font-size:13px;color:var(--txt);background:#fff;
+  outline:none;transition:border-color .15s;cursor:pointer
+}
+.review-select:focus{border-color:var(--teal)}
+.review-select.selected{border-color:var(--ok);background:rgba(10,118,85,.04)}
+.review-ignore-btn{
+  padding:8px 14px;border-radius:var(--r);border:1px solid var(--bdr);
+  background:#fff;color:var(--txt3);font-family:var(--fm);font-size:11px;
+  cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0
+}
+.review-ignore-btn:hover{border-color:var(--bdr2);color:var(--txt)}
+.review-ignore-btn.ignored{background:var(--s2);border-color:var(--bdr2);color:var(--txt2)}
+
+.review-footer{
+  flex-shrink:0;background:#fff;border-top:1px solid var(--bdr);
+  padding:16px 24px;display:flex;align-items:center;justify-content:space-between
+}
+.review-footer-info{font-size:12px;color:var(--txt3)}
+.review-next-btn{
+  padding:10px 28px;border-radius:var(--r);background:var(--teal);
+  color:#fff;border:none;font-family:var(--fm);font-size:12px;font-weight:500;
+  cursor:pointer;transition:all .15s
+}
+.review-next-btn:hover{background:#024a4b}
+.review-prev-btn{
+  padding:10px 18px;border-radius:var(--r);border:1px solid var(--bdr);
+  background:#fff;color:var(--txt2);font-family:var(--fm);font-size:12px;
+  cursor:pointer;transition:all .15s
+}
+.review-prev-btn:hover{border-color:var(--bdr2);color:var(--txt)}
+
+/* ── N1-A: EDICIÓN DIRECTA DE CATÁLOGO ── */
+.cat-edit-panel{background:#fff;border:1px solid var(--bdr);border-radius:var(--r);margin-bottom:12px;overflow:hidden;box-shadow:var(--shadow)}
+.cat-edit-level-hdr{
+  display:flex;align-items:center;gap:10px;padding:11px 16px;
+  background:var(--s1);border-bottom:1px solid var(--bdr)
+}
+.cat-edit-level-name{font-family:var(--fm);font-size:12px;font-weight:500;color:var(--teal);flex:1}
+.cat-edit-level-meta{font-size:11px;color:var(--txt3)}
+.cat-edit-field-block{border-bottom:1px solid var(--bdr)}
+.cat-edit-field-block:last-child{border-bottom:none}
+.cat-edit-field-hdr{
+  display:flex;align-items:center;gap:10px;padding:9px 16px;
+  background:rgba(1,51,52,.02);cursor:pointer;transition:background .15s
+}
+.cat-edit-field-hdr:hover{background:rgba(1,51,52,.05)}
+.cat-edit-field-pos{font-family:var(--fm);font-size:10px;color:var(--txt3);width:24px;text-align:center;flex-shrink:0}
+.cat-edit-field-name{font-size:12px;font-weight:500;color:var(--txt);flex:1}
+.cat-edit-field-count{font-family:var(--fm);font-size:10px;color:var(--txt3);padding:2px 8px;border-radius:4px;background:var(--s2)}
+.cat-edit-field-toggle{font-size:11px;color:var(--txt3);transition:transform .2s;flex-shrink:0}
+.cat-edit-field-toggle.open{transform:rotate(90deg)}
+.cat-edit-field-body{display:none;padding:10px 16px 14px;border-top:1px solid var(--bdr)}
+.cat-edit-field-body.open{display:block}
+.cat-edit-vals{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;min-height:24px}
+.cat-edit-chip{
+  display:inline-flex;align-items:center;gap:5px;padding:3px 10px;
+  border-radius:4px;background:var(--s2);border:1px solid var(--bdr);
+  font-family:var(--fm);font-size:11px;color:var(--txt2);transition:all .15s
+}
+.cat-edit-chip:hover{background:rgba(204,34,0,.07);border-color:rgba(204,34,0,.25)}
+.cat-edit-chip-del{
+  cursor:pointer;color:var(--txt3);font-size:13px;line-height:1;
+  padding:0 2px;transition:color .15s
+}
+.cat-edit-chip-del:hover{color:var(--err)}
+.cat-edit-add-row{display:flex;gap:6px;align-items:center}
+.cat-edit-key{width:90px;padding:5px 9px;border:1px solid var(--bdr);border-radius:var(--r);font-family:var(--fm);font-size:11px;text-transform:uppercase;outline:none;transition:border-color .15s}
+.cat-edit-key:focus{border-color:var(--teal)}
+.cat-edit-desc{flex:1;padding:5px 9px;border:1px solid var(--bdr);border-radius:var(--r);font-size:11px;outline:none;transition:border-color .15s}
+.cat-edit-desc:focus{border-color:var(--teal)}
+.cat-edit-add-btn{padding:5px 12px;border:none;border-radius:var(--r);background:var(--teal);color:#fff;font-family:var(--fm);font-size:10px;cursor:pointer;white-space:nowrap;transition:background .15s}
+.cat-edit-add-btn:hover{background:#024a4b}
+.cat-edit-free-row{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--txt3);padding:4px 0}
+
+/* ── N1-C: BÚSQUEDA GLOBAL EN CATÁLOGO ── */
+.catalog-search-wrap{position:relative;margin-bottom:16px}
+.catalog-search-input{
+  width:100%;padding:9px 14px 9px 36px;border:1px solid var(--bdr);
+  border-radius:var(--r);font-family:var(--fn);font-size:13px;
+  color:var(--txt);background:#fff;outline:none;transition:border-color .15s
+}
+.catalog-search-input:focus{border-color:var(--teal)}
+.catalog-search-icon{
+  position:absolute;left:12px;top:50%;transform:translateY(-50%);
+  font-size:14px;pointer-events:none;opacity:.4
+}
+.catalog-search-clear{
+  position:absolute;right:10px;top:50%;transform:translateY(-50%);
+  border:none;background:none;cursor:pointer;color:var(--txt3);
+  font-size:16px;padding:2px 6px;border-radius:4px;transition:all .15s
+}
+.catalog-search-clear:hover{color:var(--txt);background:var(--s2)}
+.search-highlight{background:rgba(255,92,26,.2);border-radius:2px;padding:0 1px}
+.search-match-info{font-family:var(--fm);font-size:10px;color:var(--txt3);margin-bottom:10px}
+
+/* ── B2: VERSIONING DE CATÁLOGO ── */
+.version-tag{font-family:var(--fm);font-size:9px;padding:2px 7px;border-radius:4px;background:rgba(1,51,52,.07);border:1px solid rgba(1,51,52,.15);color:var(--teal);white-space:nowrap}
+.catalog-log{display:flex;flex-direction:column;gap:4px;margin-top:10px}
+.catalog-log-entry{display:flex;align-items:center;gap:8px;padding:5px 10px;background:var(--s1);border-radius:5px;font-size:11px}
+.catalog-log-date{font-family:var(--fm);font-size:10px;color:var(--txt3);white-space:nowrap}
+.catalog-log-desc{color:var(--txt2);flex:1}
+
+/* ── D2: SALUD DEL CATÁLOGO ── */
+.health-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:20px}
+.health-card{background:#fff;border:1px solid var(--bdr);border-radius:var(--r);padding:16px 18px;box-shadow:var(--shadow)}
+.health-card-title{font-family:var(--fm);font-size:12px;font-weight:500;color:var(--teal);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.health-field-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.health-field-name{font-size:11px;color:var(--txt2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.health-field-bar{height:6px;background:var(--s2);border-radius:3px;width:80px;flex-shrink:0;overflow:hidden}
+.health-field-fill{height:100%;border-radius:3px;transition:width .4s}
+.health-field-count{font-family:var(--fm);font-size:10px;color:var(--txt3);width:36px;text-align:right;flex-shrink:0}
+.h-ok{color:var(--ok)}.h-warn{color:var(--warn)}.h-err{color:var(--err)}
+
+/* ── B3: COMPARACIÓN DE CLIENTES ── */
+.comparison-wrap{background:#fff;border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+.comparison-table{width:100%;border-collapse:collapse;font-size:12px}
+.comparison-table th{background:var(--teal);color:rgba(255,255,255,.85);padding:10px 14px;text-align:left;font-family:var(--fm);font-size:10px;font-weight:500;letter-spacing:.05em;white-space:nowrap}
+.comparison-table td{padding:10px 14px;border-bottom:1px solid var(--bdr);vertical-align:middle}
+.comparison-table tr:last-child td{border-bottom:none}
+.comparison-table tr:hover td{background:var(--s1)}
+.comp-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;display:inline-block;margin-right:8px}
+.comp-score{font-family:var(--fm);font-size:12px;font-weight:500;padding:2px 9px;border-radius:4px;display:inline-block}
+.comp-score.ok{background:rgba(10,118,85,.1);color:var(--ok)}
+.comp-score.warn{background:rgba(180,83,9,.1);color:var(--warn)}
+.comp-score.err{background:rgba(204,34,0,.1);color:var(--err)}
+.comp-score.none{background:var(--s2);color:var(--txt3)}
+.comp-bar{display:inline-block;height:6px;background:var(--s2);border-radius:3px;width:100px;vertical-align:middle;overflow:hidden;margin-left:8px}
+.comp-bar-fill{height:100%;border-radius:3px;display:block}
+
+/* ── C2: VALIDACIÓN MANUAL INLINE ── */
+.manual-validator{
+  background:#fff;border:1px solid var(--bdr);border-radius:var(--r2);
+  padding:20px 24px;margin-bottom:20px;box-shadow:var(--shadow)
+}
+.manual-validator-header{
+  display:flex;align-items:center;gap:10px;margin-bottom:16px
+}
+.manual-validator-title{
+  font-family:var(--fm);font-size:12px;font-weight:500;color:var(--teal)
+}
+.manual-level-pills{display:flex;gap:6px;flex-wrap:wrap}
+.manual-level-pill{
+  padding:4px 12px;border-radius:20px;border:1px solid var(--bdr);
+  background:#fff;color:var(--txt2);font-family:var(--fm);font-size:11px;
+  cursor:pointer;transition:all .15s
+}
+.manual-level-pill:hover{border-color:var(--bdr2)}
+.manual-level-pill.active{background:var(--teal);border-color:var(--teal);color:#fff}
+.manual-input-row{display:flex;gap:10px;align-items:center;margin-bottom:14px}
+.manual-input{
+  flex:1;padding:10px 14px;border:1px solid var(--bdr);border-radius:var(--r);
+  font-family:var(--fm);font-size:13px;color:var(--txt);background:#fff;
+  outline:none;transition:border-color .15s;letter-spacing:.02em
+}
+.manual-input:focus{border-color:var(--teal)}
+.manual-input.has-errors{border-color:rgba(204,34,0,.4)}
+.manual-input.is-ok{border-color:rgba(10,118,85,.4)}
+.manual-clear-btn{
+  padding:9px 14px;border:1px solid var(--bdr);border-radius:var(--r);
+  background:#fff;color:var(--txt3);font-family:var(--fm);font-size:11px;
+  cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0
+}
+.manual-clear-btn:hover{border-color:var(--bdr2);color:var(--txt)}
+.manual-result{display:none}
+.manual-result.visible{display:block}
+.manual-tokens{
+  padding:10px 14px;background:var(--s1);border:1px solid var(--bdr);
+  border-radius:var(--r);margin-bottom:12px;font-family:var(--fm);
+  font-size:12px;line-height:2;word-break:break-all
+}
+.manual-status-ok{
+  display:flex;align-items:center;gap:8px;padding:10px 14px;
+  background:rgba(10,118,85,.06);border:1px solid rgba(10,118,85,.2);
+  border-radius:var(--r);font-size:12px;color:var(--ok);font-weight:500
+}
+.manual-errors{display:flex;flex-direction:column;gap:8px}
+.manual-err-block{
+  border:1px solid rgba(204,34,0,.2);border-radius:var(--r);overflow:hidden
+}
+.manual-err-hdr{
+  display:flex;align-items:center;gap:8px;padding:8px 12px;
+  background:rgba(204,34,0,.04);border-bottom:1px solid rgba(204,34,0,.1)
+}
+.manual-err-pos{font-family:var(--fm);font-size:10px;color:var(--txt3)}
+.manual-err-field{font-family:var(--fm);font-size:11px;font-weight:500;color:var(--txt)}
+.manual-err-found{
+  font-family:var(--fm);font-size:10px;padding:2px 7px;border-radius:4px;
+  background:rgba(204,34,0,.08);border:1px solid rgba(204,34,0,.2);color:var(--err)
+}
+.manual-err-body{padding:8px 12px;display:flex;align-items:center;gap:8px}
+.manual-err-select{
+  flex:1;padding:6px 9px;border:1px solid var(--bdr);border-radius:var(--r);
+  font-family:var(--fn);font-size:12px;color:var(--txt);background:#fff;
+  outline:none;transition:border-color .15s;cursor:pointer
+}
+.manual-err-select:focus{border-color:var(--teal)}
+.manual-corrected{
+  display:flex;align-items:center;gap:10px;padding:8px 14px;
+  background:rgba(10,118,85,.05);border:1px solid rgba(10,118,85,.15);
+  border-radius:var(--r);margin-top:10px
+}
+.manual-corrected-label{font-size:10px;color:var(--ok);font-family:var(--fm);font-weight:500;white-space:nowrap}
+.manual-corrected-val{font-family:var(--fm);font-size:12px;color:var(--txt);flex:1;word-break:break-all}
+.manual-copy-btn{
+  padding:5px 12px;border:1px solid rgba(10,118,85,.3);border-radius:5px;
+  background:rgba(10,118,85,.06);color:var(--ok);font-family:var(--fm);
+  font-size:10px;cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0
+}
+.manual-copy-btn:hover{background:rgba(10,118,85,.14)}
+
+/* ── LOGIN / SETUP SCREEN ── */
+.login-screen{
+  position:fixed;inset:0;background:var(--teal);z-index:1000;
+  display:flex;align-items:center;justify-content:center;padding:20px
+}
+.login-card{
+  background:#fff;border-radius:var(--r2);padding:40px 44px;
+  width:100%;max-width:440px;box-shadow:0 24px 64px rgba(0,0,0,.25)
+}
+.login-logo{font-family:var(--fm);font-size:20px;font-weight:500;color:var(--orange);letter-spacing:.08em;margin-bottom:4px}
+.login-logo span{color:var(--teal)}
+.login-tagline{font-size:12px;color:var(--txt3);margin-bottom:32px}
+.login-title{font-family:var(--fm);font-size:13px;font-weight:500;color:var(--teal);margin-bottom:6px}
+.login-sub{font-size:11px;color:var(--txt3);margin-bottom:20px;line-height:1.5}
+.login-input{
+  width:100%;padding:11px 14px;border:1px solid var(--bdr);border-radius:var(--r);
+  font-family:var(--fm);font-size:14px;letter-spacing:.08em;color:var(--txt);
+  outline:none;transition:border-color .15s;margin-bottom:12px;background:#fff
+}
+.login-input:focus{border-color:var(--teal)}
+.login-input.err{border-color:var(--err)}
+.login-btn{
+  width:100%;padding:11px;border-radius:var(--r);border:none;
+  background:var(--teal);color:#fff;font-family:var(--fm);font-size:13px;
+  font-weight:500;cursor:pointer;transition:all .15s;margin-bottom:8px
+}
+.login-btn:hover{background:#024a4b;transform:translateY(-1px)}
+.login-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.login-err{font-size:11px;color:var(--err);margin-bottom:8px;min-height:16px}
+.login-setup-link{font-size:11px;color:var(--txt3);text-align:center;cursor:pointer;transition:color .15s}
+.login-setup-link:hover{color:var(--teal)}
+.login-divider{border:none;border-top:1px solid var(--bdr);margin:20px 0}
+.login-mode-tabs{display:flex;gap:6px;margin-bottom:20px}
+.login-mode-tab{
+  flex:1;padding:8px;border-radius:var(--r);border:2px solid var(--bdr);
+  background:#fff;color:var(--txt2);font-family:var(--fm);font-size:11px;
+  cursor:pointer;text-align:center;transition:all .15s
+}
+.login-mode-tab.active{border-color:var(--teal);background:rgba(1,51,52,.06);color:var(--teal);font-weight:500}
+
+/* Setup screen */
+.setup-section{margin-bottom:20px}
+.setup-label{font-size:11px;font-weight:500;color:var(--txt2);font-family:var(--fm);margin-bottom:5px;display:block}
+.setup-hint{font-size:10px;color:var(--txt3);margin-top:3px;line-height:1.4}
+.setup-step{
+  display:flex;gap:12px;padding:12px 14px;background:var(--s1);
+  border-radius:var(--r);border:1px solid var(--bdr);margin-bottom:8px
+}
+.setup-step-num{
+  width:22px;height:22px;border-radius:50%;background:var(--teal);color:#fff;
+  font-family:var(--fm);font-size:10px;font-weight:500;display:flex;
+  align-items:center;justify-content:center;flex-shrink:0;margin-top:1px
+}
+.setup-step-body{flex:1}
+.setup-step-title{font-size:12px;font-weight:500;color:var(--txt);margin-bottom:3px}
+.setup-step-desc{font-size:11px;color:var(--txt3);line-height:1.5}
+.setup-step-link{color:var(--info);text-decoration:none;font-size:11px}
+.setup-step-link:hover{text-decoration:underline}
+.setup-code-display{
+  font-family:var(--fm);font-size:13px;letter-spacing:.1em;padding:8px 12px;
+  background:var(--s2);border-radius:var(--r);color:var(--teal);font-weight:500;
+  display:flex;align-items:center;justify-content:space-between;margin-top:6px
+}
+.setup-copy-btn{font-size:10px;color:var(--txt3);background:none;border:none;cursor:pointer;padding:2px 6px}
+.setup-copy-btn:hover{color:var(--teal)}
+
+/* Role badge in header */
+.hdr-role-badge{
+  font-family:var(--fm);font-size:10px;padding:3px 9px;border-radius:10px;
+  border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);white-space:nowrap
+}
+.hdr-role-badge.admin{border-color:var(--orange);color:var(--orange)}
+.hdr-logout-btn{
+  padding:5px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.2);
+  background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);
+  font-family:var(--fm);font-size:10px;cursor:pointer;transition:all .15s
+}
+.hdr-logout-btn:hover{border-color:rgba(255,255,255,.4);color:#fff}
+
+/* Sync indicator */
+.sync-indicator{
+  display:flex;align-items:center;gap:5px;font-family:var(--fm);
+  font-size:10px;color:rgba(255,255,255,.5);white-space:nowrap
+}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.3)}
+.sync-dot.ok{background:var(--ok)}
+.sync-dot.err{background:var(--err)}
+.sync-dot.loading{background:var(--orange);animation:pulse .8s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* Operator read-only overlay for edit buttons */
+.op-hidden{display:none!important}
+
+/* ── D1: AVISO CATÁLOGOS VACÍOS ── */
+.catalog-warn-banner{
+  background:rgba(180,83,9,.06);border:1px solid rgba(180,83,9,.25);
+  border-radius:var(--r);padding:12px 16px;margin-bottom:16px;
+  display:none;flex-direction:column;gap:8px
+}
+.catalog-warn-banner.visible{display:flex}
+.catalog-warn-title{font-size:12px;font-weight:500;color:var(--warn);display:flex;align-items:center;gap:6px}
+.catalog-warn-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.catalog-warn-chip{
+  font-family:var(--fm);font-size:10px;padding:2px 8px;border-radius:4px;
+  background:rgba(180,83,9,.1);border:1px solid rgba(180,83,9,.2);color:var(--warn)
+}
+
+/* ── PROGRESS / TOAST / MODAL ── */
+.progress-bar{position:fixed;top:56px;left:0;right:0;height:3px;background:var(--s2);z-index:400;display:none}
+.progress-bar.show{display:block}
+.progress-fill{height:100%;background:var(--orange);width:0;transition:width .3s;border-radius:0 2px 2px 0}
+.progress-label{position:fixed;top:62px;left:50%;transform:translateX(-50%);background:rgba(1,51,52,.95);color:#fff;padding:6px 16px;border-radius:20px;font-family:var(--fm);font-size:11px;z-index:400;display:none;white-space:nowrap}
+.progress-label.show{display:block}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--teal);color:#fff;padding:9px 20px;border-radius:20px;font-family:var(--fm);font-size:12px;z-index:500;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.err{background:var(--err)}.toast.ok{background:var(--ok)}
+.modal-overlay{position:fixed;inset:0;background:rgba(8,8,67,.45);z-index:600;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:var(--r2);padding:28px 32px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal-title{font-family:var(--fm);font-size:14px;font-weight:500;color:var(--teal);margin-bottom:4px}
+.modal-sub{font-size:12px;color:var(--txt3);margin-bottom:20px;line-height:1.5}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.modal-btn{padding:8px 18px;border-radius:6px;font-family:var(--fm);font-size:12px;cursor:pointer;border:1px solid var(--bdr);background:#fff;color:var(--txt2);transition:all .15s}
+.modal-btn.primary{background:var(--teal);border-color:var(--teal);color:#fff;font-weight:500}
+.modal-btn.primary:hover{background:#024a4b}
+.modal-btn.danger{background:var(--err);border-color:var(--err);color:#fff}
+.modal-btn.danger:hover{background:#aa1c00}
+#importJsonInput{display:none}
+
+/* Client detail */
+.client-detail-header{background:#fff;border:1px solid var(--bdr);border-radius:var(--r2);padding:20px 24px;margin-bottom:16px;display:flex;align-items:center;gap:16px;box-shadow:var(--shadow)}
+.client-big-dot{width:44px;height:44px;border-radius:50%;flex-shrink:0}
+.client-detail-name{font-family:var(--fm);font-size:16px;font-weight:500;color:var(--teal)}
+.client-detail-meta{font-size:12px;color:var(--txt3);margin-top:3px}
+.taxo-overview{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.taxo-card{background:#fff;border:1px solid var(--bdr);border-radius:var(--r);padding:16px 18px;box-shadow:var(--shadow)}
+.taxo-card-name{font-family:var(--fm);font-size:12px;font-weight:500;color:var(--teal);margin-bottom:4px}
+.taxo-card-fields{font-size:22px;font-weight:600;color:var(--txt);line-height:1;margin-bottom:3px}
+.taxo-card-sub{font-size:11px;color:var(--txt3)}
+.free-badge{font-family:var(--fm);font-size:9px;padding:2px 6px;border-radius:4px;background:rgba(1,51,52,.08);color:var(--teal);font-weight:500}
+.sub-badge{font-family:var(--fm);font-size:9px;padding:2px 6px;border-radius:4px;background:rgba(124,58,237,.1);color:#7C3AED;font-weight:500}
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+<div class="progress-label" id="progressLabel"></div>
+<div class="toast" id="toast"></div>
+
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card" id="loginCard">
+    <div class="login-logo">Taxo<span>Platform</span></div>
+    <div class="login-tagline">Validación de taxonomías para agencias de medios</div>
+
+    <div class="login-mode-tabs">
+      <div class="login-mode-tab active" id="tabAdmin" onclick="loginSwitchMode('admin')">Admin</div>
+      <div class="login-mode-tab" id="tabOperator" onclick="loginSwitchMode('operator')">Operador</div>
+    </div>
+
+    <div id="loginFormArea">
+      <div class="login-title" id="loginTitle">Acceso Admin</div>
+      <div class="login-sub" id="loginSub">Ingresa tu código de administrador para acceder a la configuración completa.</div>
+      <input type="password" class="login-input" id="loginCodeInput"
+        placeholder="Código de acceso"
+        onkeydown="if(event.key==='Enter') loginSubmit()">
+      <div class="login-err" id="loginErr"></div>
+      <button class="login-btn" id="loginBtn" onclick="loginSubmit()">Entrar</button>
+      <div class="login-setup-link" onclick="showSetupScreen()">¿Primera vez? Configurar la plataforma →</div>
+    </div>
+  </div>
+
+  <!-- SETUP SCREEN (hidden initially) -->
+  <div class="login-card" id="setupCard" style="display:none;max-width:540px;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+      <button onclick="hideSetupScreen()" style="border:none;background:none;cursor:pointer;color:var(--txt3);font-size:18px;padding:0">←</button>
+      <div>
+        <div class="login-logo">Configuración inicial</div>
+        <div class="login-tagline">Sigue estos pasos una sola vez</div>
+      </div>
+    </div>
+
+    <div class="setup-section">
+      <div class="setup-step">
+        <div class="setup-step-num">1</div>
+        <div class="setup-step-body">
+          <div class="setup-step-title">Crear el Google Sheet</div>
+          <div class="setup-step-desc">Crea un Google Sheet nuevo. Nómbralo como quieras (ej. "TaxoPlatform DB"). Copia su ID de la URL: <code style="font-family:var(--fm);font-size:10px;background:var(--s2);padding:1px 5px;border-radius:3px">docs.google.com/spreadsheets/d/<strong>ESTE_ES_EL_ID</strong>/edit</code></div>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="setup-step-num">2</div>
+        <div class="setup-step-body">
+          <div class="setup-step-title">Crear Google Cloud Project</div>
+          <div class="setup-step-desc">Ve a <a href="https://console.cloud.google.com" target="_blank" class="setup-step-link">console.cloud.google.com</a> → Nuevo proyecto → APIs y Servicios → Habilitar API → busca "Google Sheets API" y habilítala. Luego ve a Credenciales → Crear credencial → ID de cliente OAuth → Aplicación web → agrega tu URL de GitHub Pages como origen autorizado.</div>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="setup-step-num">3</div>
+        <div class="setup-step-body">
+          <div class="setup-step-title">Ingresar credenciales aquí</div>
+          <div class="setup-step-desc">Completa los campos y define tus códigos de acceso.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="setup-section">
+      <label class="setup-label">Google Sheet ID <span style="color:var(--err)">*</span></label>
+      <input type="text" class="login-input" id="setupSheetId" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms">
+      <div class="setup-hint">El ID largo de la URL de tu Google Sheet</div>
+    </div>
+
+    <div class="setup-section">
+      <label class="setup-label">Google OAuth Client ID <span style="color:var(--err)">*</span></label>
+      <input type="text" class="login-input" id="setupClientId" placeholder="123456789-abc.apps.googleusercontent.com">
+      <div class="setup-hint">De Google Cloud Console → Credenciales</div>
+    </div>
+
+    <div class="setup-section">
+      <label class="setup-label">Código Admin <span style="color:var(--err)">*</span></label>
+      <input type="text" class="login-input" id="setupAdminCode" placeholder="Elige un código seguro" maxlength="50">
+      <div class="setup-hint">Solo tú lo sabes. Guárdalo bien.</div>
+    </div>
+
+    <div class="setup-section">
+      <label class="setup-label">Código Operador <span style="color:var(--err)">*</span></label>
+      <input type="text" class="login-input" id="setupOperatorCode" placeholder="Comparte este con tu equipo" maxlength="50">
+      <div class="setup-hint">Todos los operadores usan el mismo código.</div>
+    </div>
+
+    <div class="login-err" id="setupErr"></div>
+    <button class="login-btn" onclick="saveSetup()">Guardar configuración</button>
+    <div style="font-size:10px;color:var(--txt3);text-align:center;margin-top:8px">La configuración se guarda en este browser. Repite en cada dispositivo nuevo.</div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-logo">Taxo<span>Platform</span></div>
+  <div class="hdr-client-pill" onclick="nav('validate')">
+    <div class="hdr-client-dot" id="hdrClientDot" style="background:var(--bdr2)"></div>
+    <span class="hdr-client-name" id="hdrClientName">Sin cliente seleccionado</span>
+  </div>
+  <div class="hdr-sep"></div>
+  <div class="sync-indicator" id="syncIndicator" style="display:none">
+    <div class="sync-dot" id="syncDot"></div>
+    <span id="syncLabel">—</span>
+  </div>
+  <span class="hdr-role-badge" id="hdrRoleBadge" style="display:none"></span>
+  <button class="hdr-btn" onclick="downloadTemplate()" id="btnTemplate" disabled>↓ Template</button>
+  <button class="hdr-btn primary" onclick="nav('validate')">Validar →</button>
+  <button class="hdr-logout-btn" onclick="logout()">Salir</button>
+</header>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-section">
+      <div class="sb-label">Navegación</div>
+      <button class="sb-btn active" id="nav-clients" onclick="nav('clients')">◫ Clientes</button>
+      <button class="sb-btn" id="nav-validate" onclick="nav('validate')">✓ Validar</button>
+      <button class="sb-btn" id="nav-compare" onclick="nav('compare')">⇄ Comparar clientes</button>
+    </div>
+    <div class="sb-section" style="flex:1">
+      <div class="sb-label">Clientes</div>
+      <div class="client-list" id="clientList"></div>
+      <div class="no-clients" id="noClientsMsg" style="display:none">Aún no tienes clientes.<br>Crea el primero para comenzar.</div>
+      <button class="add-dashed-btn" onclick="startNewClient()">+ Nuevo cliente</button>
+    </div>
+    <div class="sb-section">
+      <div class="sb-label">Datos</div>
+      <button class="sb-btn" onclick="exportAllJSON()">↓ Exportar backup</button>
+      <button class="sb-btn" onclick="document.getElementById('importJsonInput').click()">↑ Importar backup</button>
+      <input type="file" id="importJsonInput" accept=".json" onchange="importJSON(this)">
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- WELCOME -->
+    <div class="view active" id="view-welcome">
+      <div class="empty-state">
+        <div class="empty-icon">◫</div>
+        <div class="empty-title">Bienvenido a TaxoPlatform</div>
+        <div class="empty-sub">Crea tu primer cliente para definir su estructura de taxonomía y comenzar a validar.</div>
+        <button class="empty-cta" onclick="startNewClient()">+ Crear primer cliente</button>
+      </div>
+    </div>
+
+    <!-- CLIENTS -->
+    <div class="view" id="view-clients">
+      <div class="page-hdr">
+        <div class="page-title">Clientes</div>
+        <div class="page-badge" id="clientCountBadge">0 clientes</div>
+        <div class="page-sep"></div>
+        <button class="page-btn primary admin-only" onclick="startNewClient()">+ Nuevo cliente</button>
+      </div>
+      <div id="clientsGrid"></div>
+    </div>
+
+    <!-- WIZARD -->
+    <div class="view" id="view-wizard">
+      <div class="wizard-wrap">
+        <div class="wizard-steps" id="wizardSteps"></div>
+        <!-- Steps rendered dynamically -->
+        <div id="wizardContent"></div>
+      </div>
+    </div>
+
+    <!-- CLIENT DETAIL -->
+    <div class="view" id="view-client-detail">
+      <div id="clientDetailContent"></div>
+    </div>
+
+    <!-- COMPARE — B3 -->
+    <div class="view" id="view-compare">
+      <div class="page-hdr">
+        <div class="page-title">Comparación de clientes</div>
+        <div class="page-badge" id="compareBadge">—</div>
+        <div class="page-sep"></div>
+      </div>
+      <div id="compareContent"></div>
+    </div>
+
+    <!-- VALIDATE -->
+    <div class="view" id="view-validate">
+      <div class="page-hdr">
+        <div class="page-title" id="validateTitle">Validar taxonomías</div>
+        <div class="page-sep"></div>
+        <button class="page-btn" onclick="resetValidation()" id="btnNewFile" style="display:none">↑ Nuevo archivo</button>
+        <button class="page-btn" onclick="enterReviewMode()" id="btnReview" style="display:none">⚡ Revisar errores</button>
+        <button class="page-btn" onclick="exportResults()" id="btnExportResults" disabled>↓ Exportar Excel</button>
+      </div>
+      <!-- D1: Aviso catálogos vacíos -->
+      <div class="catalog-warn-banner" id="catalogWarnBanner">
+        <div class="catalog-warn-title">⚠ Algunos campos no tienen valores cargados en el catálogo</div>
+        <div class="catalog-warn-list" id="catalogWarnList"></div>
+        <div style="font-size:11px;color:var(--warn)">Los campos sin valores aparecerán como error aunque la taxonomía sea correcta. Completa el catálogo del cliente antes de validar.</div>
+      </div>
+      <div class="no-client-warn" id="noClientWarn" style="display:none">⚠ Selecciona un cliente en el sidebar antes de cargar un archivo.</div>
+      <div id="uploadArea">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:860px;margin:0 auto">
+
+          <!-- Instrucciones -->
+          <div style="background:#fff;border:1px solid var(--bdr);border-radius:var(--r2);padding:24px;box-shadow:var(--shadow)">
+            <div style="font-family:var(--fm);font-size:12px;font-weight:500;color:var(--teal);margin-bottom:14px;display:flex;align-items:center;gap:8px">
+              <span style="width:20px;height:20px;border-radius:50%;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0">?</span>
+              ¿Cómo preparar tu archivo?
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;gap:10px">
+                <span style="font-family:var(--fm);font-size:11px;font-weight:500;color:#fff;background:var(--teal);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</span>
+                <div>
+                  <div style="font-size:12px;font-weight:500;color:var(--txt);margin-bottom:2px">Descarga el template</div>
+                  <div style="font-size:11px;color:var(--txt3);line-height:1.5">Usa el botón de abajo para obtener el archivo Excel con el formato correcto para el cliente activo.</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:10px">
+                <span style="font-family:var(--fm);font-size:11px;font-weight:500;color:#fff;background:var(--teal);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</span>
+                <div>
+                  <div style="font-size:12px;font-weight:500;color:var(--txt);margin-bottom:2px">Llena el template</div>
+                  <div style="font-size:11px;color:var(--txt3);line-height:1.5">El archivo tiene una pestaña por nivel (Campaign, Placement, Creative). En cada pestaña llena dos columnas:</div>
+                  <div style="margin-top:6px;display:flex;flex-direction:column;gap:4px">
+                    <div style="display:flex;align-items:center;gap:6px;font-size:11px">
+                      <span style="font-family:var(--fm);font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(24,119,242,.08);border:1px solid rgba(24,119,242,.2);color:#1877F2;white-space:nowrap">Platform</span>
+                      <span style="color:var(--txt3)">Plataforma de la taxonomía (META, GOOGLE, TIKTOK…)</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;font-size:11px">
+                      <span style="font-family:var(--fm);font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(1,51,52,.08);border:1px solid rgba(1,51,52,.2);color:var(--teal);white-space:nowrap">Taxonomy_Name</span>
+                      <span style="color:var(--txt3)">El nombre completo de la taxonomía a evaluar</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;gap:10px">
+                <span style="font-family:var(--fm);font-size:11px;font-weight:500;color:#fff;background:var(--teal);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</span>
+                <div>
+                  <div style="font-size:12px;font-weight:500;color:var(--txt);margin-bottom:2px">Sube y valida</div>
+                  <div style="font-size:11px;color:var(--txt3);line-height:1.5">Arrastra o selecciona el archivo completado. El sistema detecta automáticamente la pestaña correspondiente a cada nivel.</div>
+                </div>
+              </div>
+            </div>
+            <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--bdr)">
+              <button onclick="downloadTemplate()" id="btnTemplateInline" style="width:100%;padding:9px;border-radius:var(--r);border:1px solid var(--teal);background:rgba(1,51,52,.05);color:var(--teal);font-family:var(--fm);font-size:11px;font-weight:500;cursor:pointer;transition:all .15s" onmouseover="this.style.background='rgba(1,51,52,.1)'" onmouseout="this.style.background='rgba(1,51,52,.05)'">
+                ↓ Descargar template del cliente activo
+              </button>
+            </div>
+          </div>
+
+          <!-- Upload zone -->
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="upload-zone" id="uploadZone" style="margin:0;flex:1">
+              <div class="upload-zone-inner">
+                <div class="upload-icon">📂</div>
+                <div class="upload-title">Arrastra tu Excel aquí</div>
+                <div class="upload-sub">o haz click para seleccionar</div>
+                <div style="margin-top:8px;font-family:var(--fm);font-size:10px;color:var(--txt3)">xlsx · xlsb · csv · tsv</div>
+              </div>
+              <input type="file" class="upload-input" id="fileInput" accept=".xlsx,.xlsb,.xls,.csv,.tsv" onchange="handleFileInput(this)">
+            </div>
+            <div style="background:rgba(180,83,9,.05);border:1px solid rgba(180,83,9,.2);border-radius:var(--r);padding:10px 14px;font-size:11px;color:var(--warn);line-height:1.5">
+              ⚠ Asegúrate de tener un cliente seleccionado en el sidebar antes de cargar el archivo — la validación usa la taxonomía del cliente activo.
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- C2: VALIDACIÓN MANUAL INLINE -->
+      <div class="manual-validator" id="manualValidator" style="display:none">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+          <span style="font-family:var(--fm);font-size:12px;font-weight:500;color:var(--teal)">Validación rápida</span>
+          <div class="manual-level-pills" id="manualLevelPills"></div>
+          <div style="flex:1"></div>
+          <button class="manual-clear-btn" onclick="manualClear()">Limpiar</button>
+        </div>
+        <div class="manual-input-row">
+          <input type="text" class="manual-input" id="manualInput"
+            placeholder="Pega o escribe una taxonomía para validarla al instante..."
+            oninput="manualValidate()">
+        </div>
+        <div class="manual-result" id="manualResult" style="display:none">
+          <div class="tbl-wrap" style="margin-top:10px">
+            <table class="results-table">
+              <thead id="manualTblHead"></thead>
+              <tbody id="manualTblBody"></tbody>
+            </table>
+          </div>
+          <div id="manualCorrectedBar" style="display:none;margin-top:10px"></div>
+        </div>
+      </div>
+
+      <div id="resultsDashboard" style="display:none">
+        <div class="sum-grid" id="sumGrid"></div>
+        <div class="result-tabs" id="resultTabs"></div>
+        <div class="filter-bar">
+          <button class="filter-btn active" id="fAll" onclick="setStatusFilter('')">Todos</button>
+          <button class="filter-btn" id="fErr" onclick="setStatusFilter('error')">Solo errores</button>
+          <button class="filter-btn" id="fOk" onclick="setStatusFilter('ok')">Sin errores</button>
+          <input type="text" class="filter-search" id="fSearch" placeholder="Buscar en taxonomías...">
+          <span class="filter-count" id="filterCount"></span>
+        </div>
+        <div class="tbl-wrap">
+          <table class="results-table"><thead id="tblHead"></thead><tbody id="tblBody"></tbody></table>
+          <div style="padding:20px;text-align:center;display:none;color:var(--txt3);font-size:12px" id="emptyMsg">Sin resultados con los filtros actuales.</div>
+          <div class="pagination" id="pagination"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- E1: OVERLAY REVISIÓN RÁPIDA -->
+<div class="review-overlay" id="reviewOverlay">
+  <div class="review-hdr">
+    <div class="review-hdr-title">Modo revisión rápida</div>
+    <div class="review-hdr-prog" id="reviewProg"></div>
+    <button class="review-hdr-back" onclick="exitReviewMode()">← Volver a tabla</button>
+  </div>
+  <div class="review-body">
+    <div class="review-card" id="reviewCard"></div>
+  </div>
+  <div class="review-footer">
+    <button class="review-prev-btn" id="reviewPrevBtn" onclick="reviewNav(-1)">← Anterior</button>
+    <span class="review-footer-info" id="reviewFooterInfo"></span>
+    <button class="review-next-btn" id="reviewNextBtn" onclick="reviewNav(1)">Siguiente →</button>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal">
+    <div class="modal-title">Eliminar cliente</div>
+    <div class="modal-sub" id="deleteModalSub"></div>
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="closeModal('deleteModal')">Cancelar</button>
+      <button class="modal-btn danger" onclick="confirmDeleteClient()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  M4 — STORAGE ENGINE
+// ═══════════════════════════════════════════════════
+const STORAGE_KEY = 'taxoplatform_v2';
+function storageLoad(){
+  try{ const r=localStorage.getItem(STORAGE_KEY); return r?JSON.parse(r):{clients:{},activeClientId:null}; }
+  catch(e){ return {clients:{},activeClientId:null}; }
+}
+function storageSave(data){ try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(data)); }catch(e){ showToast('Error al guardar','err'); } }
+function genId(){ return 'id_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6); }
+
+let DB = storageLoad();
+function getClient(id){ return DB.clients[id]||null; }
+function getActiveClient(){ return DB.activeClientId?getClient(DB.activeClientId):null; }
+function setActiveClient(id){ DB.activeClientId=id; storageSave(DB); updateHeaderClient(); }
+function saveClientToDB(c){
+  // B2: stamp updatedAt on save
+  c.updatedAt = new Date().toISOString().slice(0,10);
+  // B2: append to catalog log
+  if(!c.catalogLog) c.catalogLog = [];
+  const lastEntry = c.catalogLog[c.catalogLog.length-1];
+  const today = c.updatedAt;
+  if(!lastEntry || lastEntry.date !== today){
+    c.catalogLog.push({date: today, desc: 'Catálogo actualizado'});
+    if(c.catalogLog.length > 20) c.catalogLog = c.catalogLog.slice(-20);
+  }
+  DB.clients[c.id]=c;
+  storageSave(DB);
+  // Sync to Google Sheets if Admin and connected
+  if(currentRole==='admin' && sheetsToken){
+    writeToSheets().catch(e=>console.warn('Sheets write:',e));
+  }
+}
+function deleteClientFromDB(id){ delete DB.clients[id]; if(DB.activeClientId===id) DB.activeClientId=null; storageSave(DB); }
+
+function exportAllJSON(){
+  const b=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b);
+  a.download='taxoplatform_backup_'+new Date().toISOString().slice(0,10)+'.json'; a.click(); URL.revokeObjectURL(a.href);
+  showToast('✓ Backup exportado');
+}
+function importJSON(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{ try{ const d=JSON.parse(e.target.result); if(!d.clients) throw new Error('Formato inválido');
+    Object.assign(DB.clients,d.clients); storageSave(DB); renderAll();
+    showToast('✓ Importado — '+Object.keys(d.clients).length+' clientes');
+  }catch(err){ showToast('Error: '+err.message,'err'); }};
+  reader.readAsText(file); input.value='';
+}
+
+// ═══════════════════════════════════════════════════
+//  M5 — VALIDATOR CORE (with sub-taxonomy support)
+// ═══════════════════════════════════════════════════
+
+/**
+ * Validates a raw taxonomy string against a level's fields.
+ * Supports sub-taxonomy: fields with subTax.enabled parse their segment
+ * with a secondary separator and validate each sub-field independently.
+ */
+function validateTaxonomy(raw, fields, sep){
+  sep = sep || '_';
+  const parts  = raw.split(sep);
+  const errors = [];
+  const corrP  = [...parts];
+
+  // Normalize catalog keys to uppercase for comparison (keeps stored values intact)
+  function normVm(values){ const m={}; Object.entries(values||{}).forEach(([k,v])=>{ m[k.toUpperCase()]=v; }); return m; }
+
+  for(let i=0; i<fields.length; i++){
+    const field = fields[i];
+    const rawPart = parts[i] !== undefined ? parts[i].trim() : undefined;
+
+    if(rawPart === undefined || rawPart === ''){
+      if(!field.free){
+        const vm = normVm(field.values);
+        errors.push({position:i, fieldName:field.name, found:'(vacío)',
+          suggestions:Object.keys(vm).slice(0,5), validValues:vm, isMissing:true});
+        corrP[i]='???';
+      }
+      continue;
+    }
+
+    // ── Sub-taxonomy validation ──
+    if(field.subTax && field.subTax.enabled){
+      const subSep    = field.subTax.separator || '-';
+      const subFields = field.subTax.subFields  || [];
+      const subParts  = rawPart.split(subSep);
+      let subErrors   = [];
+      const corrSub   = [...subParts];
+
+      for(let si=0; si<subFields.length; si++){
+        const sf  = subFields[si];
+        const sv  = subParts[si] !== undefined ? subParts[si].trim().toUpperCase() : undefined;
+        if(sv === undefined || sv === ''){
+          if(!sf.free){
+            const vm=normVm(sf.values);
+            subErrors.push({sub:si, name:sf.name, found:'(vacío)', suggestions:Object.keys(vm).slice(0,5), validValues:vm});
+          }
+          continue;
+        }
+        if(sf.free){ corrSub[si]=sv; continue; }
+        const vm = normVm(sf.values);
+        if(vm[sv]){ corrSub[si]=sv; continue; }
+        const suggs = fuzzyMatch(sv, Object.keys(vm));
+        subErrors.push({sub:si, name:sf.name, found:sv, suggestions:suggs, validValues:vm});
+        corrSub[si] = suggs.length?'???'+suggs[0]+'???':'???'+sv+'???';
+      }
+
+      if(subErrors.length){
+        errors.push({position:i, fieldName:field.name, found:rawPart,
+          suggestions:[], validValues:{}, subErrors, correctedSub:corrSub.join(subSep)});
+        corrP[i] = corrSub.join(subSep);
+      } else {
+        corrP[i] = rawPart.toUpperCase();
+      }
+      continue;
+    }
+
+    // ── Regular field validation ──
+    if(field.free){ corrP[i]=rawPart.toUpperCase(); continue; }
+    const val = rawPart.toUpperCase();
+    const vm  = normVm(field.values);
+    if(vm[val]){ corrP[i]=val; continue; }
+    const suggs = fuzzyMatch(val, Object.keys(vm));
+    errors.push({position:i, fieldName:field.name, found:val, suggestions:suggs, validValues:vm});
+    corrP[i] = suggs.length?'???'+suggs[0]+'???':'???'+val+'???';
+  }
+
+  // Extra positions beyond defined fields
+  parts.slice(fields.length).forEach((p,ei)=>{
+    errors.push({position:fields.length+ei, fieldName:'Campo extra', found:p, suggestions:[], validValues:{}});
+  });
+
+  return {parts, fields, errors, corrected: errors.length ? corrP.join(sep) : null};
+}
+
+function fuzzyMatch(input, candidates){
+  const u=input.toUpperCase();
+  const exact=candidates.filter(c=>c===u); if(exact.length) return exact.slice(0,5);
+  const starts=candidates.filter(c=>c.startsWith(u)||u.startsWith(c));
+  const contains=candidates.filter(c=>c.includes(u)||u.includes(c));
+  const combined=[...new Set([...starts,...contains])];
+  if(combined.length) return combined.slice(0,5);
+  const scored=candidates.map(c=>({c,score:commonChars(u,c)})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
+  return scored.slice(0,5).map(x=>x.c);
+}
+function commonChars(a,b){ let s=0; for(const ch of a) if(b.includes(ch)) s++; return s; }
+
+const SUPPORTED_EXTS=/\.(xlsx|xlsb|xls|csv|tsv)$/i;
+const LEVEL_KEYWORDS={campaign:['campaign','campaña','camp'],placement:['placement','adset','ad set','colocacion','plc','adgroup','grupo'],creative:['creative','creativit','creatividad','cre','ad name','anuncio']};
+function detectLevel(sheetName){ const s=sheetName.toLowerCase().trim(); for(const [l,kws] of Object.entries(LEVEL_KEYWORDS)) if(kws.some(k=>s.includes(k))) return l; return null; }
+async function readFileUniversal(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=e=>{ try{ const data=new Uint8Array(e.target.result); const wb=XLSX.read(data,{type:'array',cellDates:true}); resolve(wb.SheetNames.map(name=>({sheetName:name,data:XLSX.utils.sheet_to_json(wb.Sheets[name],{defval:''})})));
+    }catch(err){ reject(err); }};
+    reader.onerror=()=>reject(new Error('Error leyendo archivo'));
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+const PLATFORM_MAP={meta:{label:'Meta',color:'#1877F2'},google:{label:'Google',color:'#EA4335'},tiktok:{label:'TikTok',color:'#333'},dv360:{label:'DV360',color:'#4285F4'},twitter:{label:'X/Twitter',color:'#1DA1F2'}};
+const CLIENT_COLORS=['#FF5C1A','#013334','#080843','#0A7655','#CC2200','#7C3AED','#D97706','#0891B2','#DB2777','#65A30D'];
+
+// ═══════════════════════════════════════════════════
+//  M1 — NAVIGATION
+// ═══════════════════════════════════════════════════
+let currentView='welcome';
+function nav(view, data){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.sb-btn[id^="nav-"]').forEach(b=>b.classList.remove('active'));
+  const nb=document.getElementById('nav-'+view); if(nb) nb.classList.add('active');
+  const el=document.getElementById('view-'+view); if(el) el.classList.add('active');
+  currentView=view;
+  if(view==='clients') renderClientsGrid();
+  if(view==='validate') renderValidateView();
+  if(view==='compare') renderCompareView();
+  if(view==='client-detail' && data) renderClientDetail(data);
+}
+function updateHeaderClient(){
+  const c=getActiveClient();
+  document.getElementById('hdrClientDot').style.background = c?c.color:'var(--bdr2)';
+  document.getElementById('hdrClientName').textContent = c?c.name:'Sin cliente seleccionado';
+  document.getElementById('btnTemplate').disabled = !c;
+}
+function renderAll(){ renderClientSidebar(); renderClientsGrid(); updateHeaderClient(); if(currentView==='validate') renderValidateView(); if(currentView==='compare') renderCompareView(); }
+
+// ═══════════════════════════════════════════════════
+//  M2 — CLIENT MANAGER
+// ═══════════════════════════════════════════════════
+function renderClientSidebar(){
+  const list=document.getElementById('clientList');
+  const noMsg=document.getElementById('noClientsMsg');
+  const clients=Object.values(DB.clients);
+  if(!clients.length){ list.innerHTML=''; noMsg.style.display='block'; return; }
+  noMsg.style.display='none';
+  list.innerHTML=clients.map(c=>`
+    <div class="client-item ${DB.activeClientId===c.id?'active':''}" onclick="selectClient('${c.id}')">
+      <div class="client-dot" style="background:${c.color}"></div>
+      <div class="client-info">
+        <div class="client-name">${esc(c.name)}</div>
+        <div class="client-meta">${c.levels.length} nivel${c.levels.length!==1?'es':''}</div>
+      </div>
+      <div class="client-actions">
+        <button class="client-icon-btn" onclick="editClient(event,'${c.id}')" title="Editar">✎</button>
+        <button class="client-icon-btn del" onclick="promptDeleteClient(event,'${c.id}')" title="Eliminar">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderClientsGrid(){
+  const clients=Object.values(DB.clients);
+  const badge=document.getElementById('clientCountBadge'); if(badge) badge.textContent=clients.length+' cliente'+(clients.length!==1?'s':'');
+  const grid=document.getElementById('clientsGrid'); if(!grid) return;
+  if(!clients.length){ grid.innerHTML=`<div class="empty-state" style="min-height:300px"><div class="empty-icon">◫</div><div class="empty-title">Sin clientes</div><div class="empty-sub">Crea tu primer cliente.</div><button class="empty-cta" onclick="startNewClient()">+ Crear cliente</button></div>`; return; }
+  grid.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">${clients.map(c=>`
+    <div style="background:#fff;border:1px solid var(--bdr);border-radius:var(--r2);padding:18px;box-shadow:var(--shadow);cursor:pointer" onclick="viewClientDetail('${c.id}')">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <div style="width:36px;height:36px;border-radius:50%;background:${c.color};flex-shrink:0"></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-family:var(--fm);font-size:13px;font-weight:500;color:var(--teal);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.name)}</div>
+          <div style="font-size:11px;color:var(--txt3);margin-top:1px">${c.platforms.join(' · ')||'Sin plataformas'}</div>
+        </div>
+        <div style="display:flex;gap:4px">
+          <button class="client-icon-btn" onclick="editClient(event,'${c.id}')">✎</button>
+          <button class="client-icon-btn del" onclick="promptDeleteClient(event,'${c.id}')">✕</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(${Math.min(c.levels.length,3)},1fr);gap:6px">
+        ${c.levels.map(l=>`<div style="background:var(--s1);border-radius:6px;padding:8px 10px;text-align:center">
+          <div style="font-family:var(--fm);font-size:18px;font-weight:500;color:var(--teal)">${l.fields.length}</div>
+          <div style="font-size:10px;color:var(--txt3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(l.name)}</div>
+        </div>`).join('')}
+      </div>
+      <div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between">
+        <span style="font-family:var(--fm);font-size:10px;color:var(--txt3)">sep primario: "${c.separator}"</span>
+        <button class="page-btn primary" style="padding:4px 12px;font-size:10px" onclick="selectClientAndValidate(event,'${c.id}')">Validar →</button>
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+function selectClient(id){
+  setActiveClient(id); renderClientSidebar();
+  showToast('✓ Activo: '+getClient(id)?.name);
+  if(currentView==='validate') renderValidateView();
+}
+function selectClientAndValidate(event,id){ event.stopPropagation(); setActiveClient(id); renderClientSidebar(); nav('validate'); }
+function viewClientDetail(id){ nav('client-detail',id); }
+
+function renderClientDetail(id){
+  const c=getClient(id); if(!c) return;
+  const el=document.getElementById('clientDetailContent');
+
+  // B2: version info
+  const updatedAt = c.updatedAt || c.createdAt || '—';
+  const logEntries = (c.catalogLog||[]).slice().reverse().slice(0,8);
+  const logHtml = logEntries.length
+    ? `<div class="catalog-log">${logEntries.map(e=>`
+        <div class="catalog-log-entry">
+          <span class="catalog-log-date">${esc(e.date)}</span>
+          <span class="catalog-log-desc">${esc(e.desc)}</span>
+        </div>`).join('')}</div>`
+    : `<div style="font-size:11px;color:var(--txt3);margin-top:8px">Sin historial de cambios</div>`;
+
+  // D2: catalog health per level
+  const healthCards = c.levels.map(l=>{
+    const controlled = l.fields.filter(f=>!f.free&&(!f.subTax||!f.subTax.enabled));
+    const total = controlled.length;
+    const withVals = controlled.filter(f=>Object.keys(f.values||{}).length>0).length;
+    const pct = total>0 ? Math.round(withVals/total*100) : 100;
+    const scoreColor = pct===100?'var(--ok)':pct>=50?'var(--warn)':'var(--err)';
+    const fieldRows = controlled.map(f=>{
+      const count = Object.keys(f.values||{}).length;
+      const barPct = count>0 ? Math.min(100, Math.round(count/20*100)) : 0;
+      const countColor = count===0?'var(--err)':count<5?'var(--warn)':'var(--ok)';
+      return `<div class="health-field-row">
+        <span class="health-field-name" title="${esc(f.name)}">${f.position}. ${esc(f.name||'Sin nombre')}</span>
+        <div class="health-field-bar"><div class="health-field-fill" style="width:${barPct}%;background:${countColor}"></div></div>
+        <span class="health-field-count" style="color:${countColor}">${count}</span>
+      </div>`;
+    }).join('');
+    return `<div class="health-card">
+      <div class="health-card-title">
+        <span>${esc(l.name)}</span>
+        <span style="font-family:var(--fm);font-size:11px;color:${scoreColor};font-weight:500">${pct}%</span>
+      </div>
+      ${fieldRows||'<div style="font-size:11px;color:var(--txt3)">Sin campos controlados</div>'}
+    </div>`;
+  }).join('');
+
+  el.innerHTML=`
+    <div class="client-detail-header">
+      <div class="client-big-dot" style="background:${c.color}"></div>
+      <div style="flex:1">
+        <div class="client-detail-name">${esc(c.name)}</div>
+        <div class="client-detail-meta">${c.platforms.join(' · ')||'Sin plataformas'} · Sep: "${c.separator}"${c.notes?' · '+esc(c.notes):''}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span class="version-tag">Actualizado: ${esc(updatedAt)}</span>
+        ${isAdmin()?`<button class="page-btn" onclick="exportClientCatalog('${c.id}')">↓ Exportar catálogo</button>`:''}
+        ${isAdmin()?`<button class="page-btn" onclick="editClient(null,'${c.id}')">✎ Editar estructura</button>`:''}
+        <button class="page-btn primary" onclick="selectClientAndValidate(event,'${c.id}')">Validar →</button>
+      </div>
+    </div>
+
+    <!-- D2: Salud del catálogo -->
+    <div style="margin-bottom:20px">
+      <div style="font-family:var(--fm);font-size:11px;font-weight:500;color:var(--teal);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+        Salud del catálogo
+        <span style="font-size:10px;color:var(--txt3);font-weight:400">— valores cargados por campo controlado</span>
+      </div>
+      <div class="health-grid">${healthCards}</div>
+    </div>
+
+    <!-- N1-C: Búsqueda global -->
+    <div class="catalog-search-wrap" id="catSearchWrap-${c.id}">
+      <span class="catalog-search-icon">⌕</span>
+      <input type="text" class="catalog-search-input" id="catSearchInput-${c.id}"
+        placeholder="Buscar KEY o descripción en todos los campos del catálogo..."
+        oninput="catalogSearch('${c.id}',this.value)">
+      <button class="catalog-search-clear" id="catSearchClear-${c.id}"
+        style="display:none" onclick="catalogSearchClear('${c.id}')">×</button>
+    </div>
+    <div class="search-match-info" id="catSearchInfo-${c.id}" style="display:none"></div>
+
+    <!-- N1-A: Edición directa por nivel (solo Admin) / Vista lectura (Operador) -->
+    <div id="catEditLevels-${c.id}">
+      ${c.levels.map((l,li)=>buildCatEditLevel(c.id,li)).join('')}
+    </div>
+
+    <!-- B2: Historial de versiones -->
+    <div style="background:#fff;border:1px solid var(--bdr);border-radius:var(--r);padding:16px 18px;margin-top:4px;box-shadow:var(--shadow)">
+      <div style="font-family:var(--fm);font-size:11px;font-weight:500;color:var(--teal);margin-bottom:4px">Historial de cambios</div>
+      <div style="font-size:11px;color:var(--txt3);margin-bottom:6px">Últimas actualizaciones del catálogo</div>
+      ${logHtml}
+    </div>`;
+}
+
+let pendingDeleteId=null;
+function promptDeleteClient(event,id){ if(event) event.stopPropagation(); pendingDeleteId=id; const c=getClient(id); document.getElementById('deleteModalSub').textContent=`¿Eliminar a "${c?.name}"? Se perderá toda su taxonomía.`; openModal('deleteModal'); }
+function confirmDeleteClient(){ if(!pendingDeleteId) return; const name=getClient(pendingDeleteId)?.name||''; deleteClientFromDB(pendingDeleteId); pendingDeleteId=null; closeModal('deleteModal'); renderAll(); Object.keys(DB.clients).length===0?nav('welcome'):nav('clients'); showToast('Eliminado: '+name); }
+function editClient(event,id){ if(event) event.stopPropagation(); const c=getClient(id); if(!c) return; wizardEditingId=id; wizardStep=1; wizardData=JSON.parse(JSON.stringify(c)); showWizard(); }
+
+// ═══════════════════════════════════════════════════
+//  N1-A — EDICIÓN DIRECTA DE CATÁLOGO
+// ═══════════════════════════════════════════════════
+
+// Tracks which field bodies are open: { 'clientId-li-fi': true }
+const catEditOpen = {};
+
+function buildCatEditLevel(cid, li, highlight=''){
+  const c = getClient(cid); if(!c) return '';
+  const l = c.levels[li];
+  const sep = l.separator || c.separator;
+
+  const fieldBlocks = l.fields.map((f, fi)=>{
+    const key = `${cid}-${li}-${fi}`;
+    const isOpen = !!catEditOpen[key];
+    const isFree = f.free || f.manual;
+    const hasSub = f.subTax && f.subTax.enabled;
+    const vals = Object.entries(f.values||{});
+    const subFieldCount = hasSub ? (f.subTax.subFields||[]).length : 0;
+
+    // Count label
+    let countLabel = '';
+    if(isFree) countLabel = '<span class="free-badge">Libre</span>';
+    else if(hasSub) countLabel = `<span class="sub-badge">${subFieldCount} sub-campos</span>`;
+    else countLabel = `<span class="cat-edit-field-count">${vals.length} valores</span>`;
+
+    // Highlight match
+    const fieldNameHtml = highlight
+      ? esc(f.name||'').replace(new RegExp('('+escRe(highlight)+')','gi'), '<span class="search-highlight">$1</span>')
+      : esc(f.name||'Sin nombre');
+
+    // Values chips with highlight
+    let valsHtml = '';
+    if(!isFree && !hasSub){
+      const chips = vals.map(([k,v])=>{
+        const kH = highlight ? k.replace(new RegExp('('+escRe(highlight)+')','gi'),'<span class="search-highlight">$1</span>') : esc(k);
+        const vH = highlight ? esc(v).replace(new RegExp('('+escRe(highlight)+')','gi'),'<span class="search-highlight">$1</span>') : esc(v);
+        return `<span class="cat-edit-chip">
+          <span title="${esc(v)}">${kH}${v&&v!==k?' <span style="color:var(--txt3);font-weight:400">— '+vH+'</span>':''}</span>
+          ${isAdmin()?`<span class="cat-edit-chip-del" onclick="catDelVal('${cid}',${li},${fi},'${esc(k)}')">×</span>`:''}
+        </span>`;
+      }).join('');
+      valsHtml = `
+        <div class="cat-edit-vals">${chips||'<span style="font-size:11px;color:var(--txt3)">Sin valores</span>'}</div>
+        ${isAdmin()?`<div class="cat-edit-add-row">
+          <input type="text" class="cat-edit-key" id="cek-${cid}-${li}-${fi}" placeholder="KEY" maxlength="40">
+          <input type="text" class="cat-edit-desc" id="ced-${cid}-${li}-${fi}" placeholder="Descripción (opcional)">
+          <button class="cat-edit-add-btn" onclick="catAddVal('${cid}',${li},${fi})">+ Agregar</button>
+        </div>`:''}`;
+    } else if(hasSub){
+      // Sub-fields edit
+      const subBlocks = (f.subTax.subFields||[]).map((sf,si)=>{
+        const subVals = Object.entries(sf.values||{});
+        const subChips = subVals.map(([k,v])=>`<span class="cat-edit-chip">
+          <span title="${esc(v)}">${esc(k)}${v&&v!==k?' <span style="color:var(--txt3);font-weight:400">— '+esc(v)+'</span>':''}</span>
+          ${isAdmin()?`<span class="cat-edit-chip-del" onclick="catDelSubVal('${cid}',${li},${fi},${si},'${esc(k)}')">×</span>`:''}
+        </span>`).join('');
+        return `<div style="margin-bottom:10px;padding:10px 12px;background:rgba(124,58,237,.04);border-radius:6px;border:1px solid rgba(124,58,237,.12)">
+          <div style="font-family:var(--fm);font-size:10px;color:#7C3AED;margin-bottom:6px;font-weight:500">${si+1}. ${esc(sf.name||'Sub-campo '+(si+1))}</div>
+          <div class="cat-edit-vals">${subChips||'<span style="font-size:11px;color:var(--txt3)">Sin valores</span>'}</div>
+          ${isAdmin()?`<div class="cat-edit-add-row">
+            <input type="text" class="cat-edit-key" id="cesk-${cid}-${li}-${fi}-${si}" placeholder="KEY" maxlength="40">
+            <input type="text" class="cat-edit-desc" id="cesd-${cid}-${li}-${fi}-${si}" placeholder="Descripción">
+            <button class="cat-edit-add-btn" onclick="catAddSubVal('${cid}',${li},${fi},${si})">+ Agregar</button>
+          </div>`:''}
+        </div>`;
+      }).join('');
+      valsHtml = subBlocks || '<div style="font-size:11px;color:var(--txt3)">Sin sub-campos definidos</div>';
+    } else {
+      valsHtml = `<div class="cat-edit-free-row">✓ Campo libre — acepta cualquier valor sin validación
+        <button style="margin-left:8px;font-size:10px;color:var(--teal);background:none;border:1px solid rgba(1,51,52,.2);border-radius:4px;padding:2px 8px;cursor:pointer" onclick="catToggleFree('${cid}',${li},${fi},false)">Convertir a controlado</button>
+      </div>`;
+    }
+
+    // Auto-open fields that have search matches
+    const shouldOpen = highlight ? _fieldMatchesSearch(f, highlight) : isOpen;
+    if(highlight && shouldOpen) catEditOpen[key] = true;
+
+    return `<div class="cat-edit-field-block" id="cef-${cid}-${li}-${fi}">
+      <div class="cat-edit-field-hdr" onclick="catToggleField('${cid}',${li},${fi})">
+        <span class="cat-edit-field-pos">${f.position}</span>
+        <span class="cat-edit-field-name">${fieldNameHtml}</span>
+        ${countLabel}
+        <span class="cat-edit-field-toggle ${shouldOpen?'open':''}">›</span>
+      </div>
+      <div class="cat-edit-field-body ${shouldOpen?'open':''}" id="cefb-${cid}-${li}-${fi}">
+        ${isAdmin()&&!isFree?`<div class="cat-edit-free-row" style="margin-bottom:8px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:var(--txt3)">
+            <input type="checkbox" ${isFree?'checked':''} onchange="catToggleFree('${cid}',${li},${fi},this.checked)"> Marcar como campo libre
+          </label>
+        </div>`:''}
+        ${valsHtml}
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="cat-edit-panel" id="cep-${cid}-${li}">
+    <div class="cat-edit-level-hdr">
+      <span class="cat-edit-level-name">${esc(l.name)}</span>
+      <span class="cat-edit-level-meta">${l.fields.length} campos · sep "${sep}"</span>
+    </div>
+    ${fieldBlocks}
+  </div>`;
+}
+
+function _fieldMatchesSearch(f, q){
+  if(!q) return false;
+  const u = q.toUpperCase();
+  if((f.name||'').toUpperCase().includes(u)) return true;
+  if(Object.entries(f.values||{}).some(([k,v])=>k.toUpperCase().includes(u)||v.toUpperCase().includes(u))) return true;
+  if(f.subTax&&f.subTax.enabled){
+    return (f.subTax.subFields||[]).some(sf=>
+      (sf.name||'').toUpperCase().includes(u)||
+      Object.entries(sf.values||{}).some(([k,v])=>k.toUpperCase().includes(u)||v.toUpperCase().includes(u))
+    );
+  }
+  return false;
+}
+
+function catToggleField(cid, li, fi){
+  const key = `${cid}-${li}-${fi}`;
+  catEditOpen[key] = !catEditOpen[key];
+  const body = document.getElementById(`cefb-${cid}-${li}-${fi}`);
+  const toggle = document.querySelector(`#cef-${cid}-${li}-${fi} .cat-edit-field-toggle`);
+  if(body){ body.classList.toggle('open', catEditOpen[key]); }
+  if(toggle){ toggle.classList.toggle('open', catEditOpen[key]); }
+}
+
+function _catSaveAndRefreshLevel(cid, li){
+  const c = getClient(cid); if(!c) return;
+  saveClientToDB(c);
+  // Re-render just this level panel
+  const panel = document.getElementById(`cep-${cid}-${li}`);
+  if(panel){
+    const q = document.getElementById(`catSearchInput-${cid}`)?.value.trim()||'';
+    panel.outerHTML = buildCatEditLevel(cid, li, q);
+  }
+  _updateCatSearchInfo(cid);
+}
+
+function catAddVal(cid, li, fi){
+  const c = getClient(cid); if(!c) return;
+  const k = (document.getElementById(`cek-${cid}-${li}-${fi}`)?.value||'').trim().toUpperCase();
+  const v = (document.getElementById(`ced-${cid}-${li}-${fi}`)?.value||'').trim();
+  if(!k){ showToast('La KEY no puede estar vacía','err'); return; }
+  if(!c.levels[li].fields[fi].values) c.levels[li].fields[fi].values = {};
+  c.levels[li].fields[fi].values[k] = v||k;
+  catEditOpen[`${cid}-${li}-${fi}`] = true;
+  _catSaveAndRefreshLevel(cid, li);
+  showToast(`✓ "${k}" agregado a ${esc(c.levels[li].fields[fi].name)}`);
+}
+
+function catDelVal(cid, li, fi, key){
+  const c = getClient(cid); if(!c) return;
+  delete c.levels[li].fields[fi].values[key];
+  catEditOpen[`${cid}-${li}-${fi}`] = true;
+  _catSaveAndRefreshLevel(cid, li);
+  showToast(`"${key}" eliminado`);
+}
+
+function catAddSubVal(cid, li, fi, si){
+  const c = getClient(cid); if(!c) return;
+  const k = (document.getElementById(`cesk-${cid}-${li}-${fi}-${si}`)?.value||'').trim().toUpperCase();
+  const v = (document.getElementById(`cesd-${cid}-${li}-${fi}-${si}`)?.value||'').trim();
+  if(!k){ showToast('La KEY no puede estar vacía','err'); return; }
+  const sf = c.levels[li].fields[fi].subTax.subFields[si];
+  if(!sf.values) sf.values = {};
+  sf.values[k] = v||k;
+  catEditOpen[`${cid}-${li}-${fi}`] = true;
+  _catSaveAndRefreshLevel(cid, li);
+  showToast(`✓ "${k}" agregado al sub-campo`);
+}
+
+function catDelSubVal(cid, li, fi, si, key){
+  const c = getClient(cid); if(!c) return;
+  delete c.levels[li].fields[fi].subTax.subFields[si].values[key];
+  catEditOpen[`${cid}-${li}-${fi}`] = true;
+  _catSaveAndRefreshLevel(cid, li);
+  showToast(`"${key}" eliminado`);
+}
+
+function catToggleFree(cid, li, fi, isFree){
+  const c = getClient(cid); if(!c) return;
+  c.levels[li].fields[fi].free   = isFree;
+  c.levels[li].fields[fi].manual = isFree;
+  catEditOpen[`${cid}-${li}-${fi}`] = true;
+  _catSaveAndRefreshLevel(cid, li);
+}
+
+// ═══════════════════════════════════════════════════
+//  N1-B — EXPORTAR CATÁLOGO ACTIVO
+// ═══════════════════════════════════════════════════
+async function exportClientCatalog(cid){
+  const c = getClient(cid); if(!c){ showToast('Cliente no encontrado','err'); return; }
+  const wb = new ExcelJS.Workbook(); wb.creator = 'TaxoPlatform';
+  const HDR='FF013334', FG='FFFFFFFF', ALT='FFF7F8FA';
+
+  for(const level of c.levels){
+    const controlledFields = level.fields.filter(f=>!f.free&&(!f.subTax||!f.subTax.enabled));
+
+    // Main sheet
+    const ws = wb.addWorksheet(level.name+' — Valores');
+    ws.columns = controlledFields.flatMap(f=>[{width:22},{width:38}]);
+
+    // Row 1: field names with position
+    const r1 = ws.addRow(controlledFields.flatMap(f=>[
+      f.position+' — '+(f.name||'Campo '+f.position), 'Descripción'
+    ]));
+    r1.height = 24;
+    r1.eachCell(cell=>{ cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:HDR}}; cell.font={bold:true,name:'Calibri',size:10,color:{argb:FG}}; cell.alignment={horizontal:'center',vertical:'middle'}; cell.border={bottom:{style:'medium',color:{argb:'FF999999'}}}; });
+
+    // Row 2: KEY / Desc labels
+    const r2 = ws.addRow(controlledFields.flatMap(()=>['KEY','Descripción']));
+    r2.height = 16;
+    r2.eachCell(c=>{ c.font={name:'Calibri',size:9,color:{argb:'FF888888'},italic:true}; c.alignment={horizontal:'center'}; });
+
+    // Data rows: all values
+    const maxRows = Math.max(...controlledFields.map(f=>Object.keys(f.values||{}).length), 0);
+    for(let vi=0; vi<maxRows; vi++){
+      const rowData = controlledFields.flatMap(f=>{
+        const entries = Object.entries(f.values||{});
+        return vi<entries.length ? [entries[vi][0], entries[vi][1]] : ['',''];
+      });
+      const dr = ws.addRow(rowData); dr.height=15;
+      const bg = vi%2===0?'FFFFFFFF':ALT;
+      dr.eachCell(cell=>{ cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:bg}}; cell.font={name:'Calibri',size:10}; });
+    }
+
+    // Sub-taxonomy sheets
+    const subFields = level.fields.filter(f=>f.subTax&&f.subTax.enabled&&!f.free);
+    subFields.forEach(f=>{
+      const wsub = wb.addWorksheet(f.position+' — '+esc(f.name)+' (sub)');
+      const controlledSubs = (f.subTax.subFields||[]).filter(sf=>!sf.free);
+      wsub.columns = controlledSubs.flatMap(()=>[{width:22},{width:38}]);
+      const sr1 = wsub.addRow(controlledSubs.flatMap((sf,si)=>[(si+1)+' — '+(sf.name||'Sub-campo '+(si+1)),'Descripción']));
+      sr1.height=24; sr1.eachCell(cell=>{ cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:HDR}}; cell.font={bold:true,name:'Calibri',size:10,color:{argb:FG}}; cell.alignment={horizontal:'center',vertical:'middle'}; cell.border={bottom:{style:'medium',color:{argb:'FF999999'}}}; });
+      const sr2 = wsub.addRow(controlledSubs.flatMap(()=>['KEY','Descripción']));
+      sr2.height=16; sr2.eachCell(c=>{ c.font={name:'Calibri',size:9,color:{argb:'FF888888'},italic:true}; c.alignment={horizontal:'center'}; });
+      const maxSub = Math.max(...controlledSubs.map(sf=>Object.keys(sf.values||{}).length),0);
+      for(let vi=0;vi<maxSub;vi++){
+        const rowData=controlledSubs.flatMap(sf=>{ const e=Object.entries(sf.values||{}); return vi<e.length?[e[vi][0],e[vi][1]]:['','']; });
+        const dr=wsub.addRow(rowData); dr.height=15;
+        dr.eachCell(cell=>{ cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:vi%2===0?'FFFFFFFF':ALT}}; cell.font={name:'Calibri',size:10}; });
+      }
+    });
+  }
+
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download = 'catalogo_'+c.name.replace(/\s+/g,'_')+'_'+new Date().toISOString().slice(0,10)+'.xlsx';
+  a.click(); URL.revokeObjectURL(a.href);
+  showToast('✓ Catálogo exportado: '+c.name,'ok');
+}
+
+// ═══════════════════════════════════════════════════
+//  N1-C — BÚSQUEDA GLOBAL EN CATÁLOGO
+// ═══════════════════════════════════════════════════
+function escRe(str){ return str.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+
+let _catSearchTimer = null;
+function catalogSearch(cid, q){
+  clearTimeout(_catSearchTimer);
+  _catSearchTimer = setTimeout(()=>_doCatalogSearch(cid, q), 180);
+}
+
+function _doCatalogSearch(cid, q){
+  const clearBtn = document.getElementById(`catSearchClear-${cid}`);
+  if(clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+
+  const c = getClient(cid); if(!c) return;
+  const container = document.getElementById(`catEditLevels-${cid}`);
+  if(!container) return;
+
+  // Rebuild all level panels with highlight
+  container.innerHTML = c.levels.map((_,li)=>buildCatEditLevel(cid,li,q)).join('');
+  _updateCatSearchInfo(cid, q);
+}
+
+function _updateCatSearchInfo(cid, q){
+  q = q || document.getElementById(`catSearchInput-${cid}`)?.value.trim()||'';
+  const infoEl = document.getElementById(`catSearchInfo-${cid}`);
+  if(!infoEl) return;
+  if(!q){ infoEl.style.display='none'; return; }
+  const c = getClient(cid); if(!c) return;
+  let matches = 0;
+  c.levels.forEach(l=>{
+    l.fields.forEach(f=>{ if(_fieldMatchesSearch(f,q)) matches++; });
+  });
+  infoEl.style.display = 'block';
+  infoEl.textContent = matches > 0
+    ? `${matches} campo${matches!==1?'s':''} con coincidencias para "${q}"`
+    : `Sin coincidencias para "${q}"`;
+}
+
+function catalogSearchClear(cid){
+  const inp = document.getElementById(`catSearchInput-${cid}`);
+  if(inp){ inp.value=''; }
+  const clearBtn = document.getElementById(`catSearchClear-${cid}`);
+  if(clearBtn) clearBtn.style.display='none';
+  const infoEl = document.getElementById(`catSearchInfo-${cid}`);
+  if(infoEl) infoEl.style.display='none';
+  const c = getClient(cid); if(!c) return;
+  const container = document.getElementById(`catEditLevels-${cid}`);
+  if(container) container.innerHTML = c.levels.map((_,li)=>buildCatEditLevel(cid,li,'')).join('');
+}
+
+// ═══════════════════════════════════════════════════
+//  M3 — TAXONOMY BUILDER WIZARD (4 steps)
+// ═══════════════════════════════════════════════════
+let wizardStep=1, wizardData=null, wizardEditingId=null;
+const WIZARD_STEPS=['Información','Niveles','Campos','Catálogos'];
+
+function startNewClient(){
+  wizardEditingId=null; wizardStep=1;
+  wizardData={
+    id:genId(), name:'', color:CLIENT_COLORS[Object.keys(DB.clients).length%CLIENT_COLORS.length],
+    platforms:[], separator:'_', notes:'', createdAt:new Date().toISOString().slice(0,10),
+    levels:[
+      {id:genId(),name:'Campaign', separator:'_',fields:Array.from({length:10},(_,i)=>mkField(i))},
+      {id:genId(),name:'Placement',separator:'_',fields:Array.from({length:10},(_,i)=>mkField(i))},
+      {id:genId(),name:'Creative', separator:'_',fields:Array.from({length:10},(_,i)=>mkField(i))},
+    ]
+  };
+  showWizard();
+}
+
+function mkField(i){ return {position:i+1,name:'',free:false,manual:false,values:{},subTax:{enabled:false,separator:'-',subFields:[]}}; }
+
+function showWizard(){ nav('wizard'); renderWizardSteps(); renderWizardContent(); }
+
+function renderWizardSteps(){
+  document.getElementById('wizardSteps').innerHTML=WIZARD_STEPS.map((label,i)=>{
+    const s=i+1, cls=s<wizardStep?'done':(s===wizardStep?'active':'');
+    const line=i<WIZARD_STEPS.length-1?`<div class="wstep-line ${s<wizardStep?'done':''}"></div>`:'';
+    return `<div class="wstep ${cls}"><div class="wstep-num">${s<wizardStep?'✓':s}</div><div class="wstep-label">${label}</div></div>${line}`;
+  }).join('');
+}
+
+function renderWizardContent(){
+  const c=document.getElementById('wizardContent');
+  if(wizardStep===1) c.innerHTML=buildStep1();
+  if(wizardStep===2) c.innerHTML=buildStep2();
+  if(wizardStep===3){ c.innerHTML=buildStep3Shell(); renderStep3Fields(activeFieldLevelIdx); }
+  if(wizardStep===4) c.innerHTML=buildStep4();
+  // Re-apply step 1 values
+  if(wizardStep===1) applyStep1Values();
+}
+
+/* ── STEP 1 ── */
+function buildStep1(){
+  return `<div class="wizard-card">
+    <div class="wizard-card-title">Información del cliente</div>
+    <div class="wizard-card-sub">Define el nombre, plataformas y configuración base.</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nombre del cliente <span class="req">*</span></label>
+        <input type="text" class="form-input" id="wClientName" placeholder="Ej. Marca ABC" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notas</label>
+        <input type="text" class="form-input" id="wClientNotes" placeholder="Opcional...">
+      </div>
+    </div>
+    <div class="form-row single">
+      <div class="form-group">
+        <label class="form-label">Separador principal</label>
+        <div class="sep-grid" id="sepGrid">
+          ${['_','|','/'].map(s=>`<div class="sep-opt ${wizardData.separator===s?'selected':''}" data-sep="${s}" onclick="selectSep(this)">
+            <div class="sep-opt-key">${s}</div><div class="sep-opt-label">${s==='_'?'guion bajo':s==='|'?'pipe':'diagonal'}</div>
+          </div>`).join('')}
+          <div class="sep-opt ${!['_','|','/'].includes(wizardData.separator)?'selected':''}" data-sep="custom" onclick="selectSep(this)">
+            <div class="sep-opt-key">?</div><div class="sep-opt-label">otro</div>
+          </div>
+        </div>
+        <div class="sep-custom-wrap" id="sepCustomWrap" style="display:${!['_','|','/'].includes(wizardData.separator)?'flex':'none'}">
+          <input type="text" class="sep-custom-input" id="sepCustomInput" maxlength="3" placeholder="sep" value="${!['_','|','/'].includes(wizardData.separator)?wizardData.separator:''}">
+          <span style="font-size:11px;color:var(--txt3)">Escribe el separador que usas</span>
+        </div>
+      </div>
+    </div>
+    <div class="form-row single">
+      <div class="form-group">
+        <label class="form-label">Plataformas</label>
+        <div class="plat-list" id="platList">
+          ${['meta','google','tiktok','dv360','twitter'].map(p=>`<label class="plat-chip ${wizardData.platforms.includes(p)?'checked':''}" data-plat="${p}">
+            <input type="checkbox" value="${p}" ${wizardData.platforms.includes(p)?'checked':''} onchange="togglePlat(this)"> ${p==='twitter'?'X / Twitter':p.charAt(0).toUpperCase()+p.slice(1)}
+          </label>`).join('')}
+          ${(wizardData.platforms.filter(p=>!['meta','google','tiktok','dv360','twitter'].includes(p))).map(p=>`<label class="plat-chip custom checked" data-plat="custom-${p}">
+            <input type="checkbox" value="${p}" checked onchange="togglePlat(this)"> ${esc(p)}
+          </label>`).join('')}
+        </div>
+        <div class="plat-add-wrap">
+          <input type="text" class="plat-add-input" id="platCustomInput" placeholder="Otra plataforma...">
+          <button class="plat-add-btn" onclick="addCustomPlat()">+ Agregar otra</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-row single">
+      <div class="form-group">
+        <label class="form-label">Color de etiqueta</label>
+        <div class="color-row">${CLIENT_COLORS.map(color=>`<div class="color-swatch ${wizardData.color===color?'selected':''}" style="background:${color};color:${color}" onclick="selectColor('${color}',this)"></div>`).join('')}</div>
+      </div>
+    </div>
+    <div class="wizard-nav">
+      <span class="wizard-nav-info">Paso 1 de 4</span>
+      <button class="page-btn primary" onclick="wizardNext(1)">Siguiente →</button>
+    </div>
+  </div>`;
+}
+function applyStep1Values(){
+  const n=document.getElementById('wClientName'); if(n) n.value=wizardData.name||'';
+  const no=document.getElementById('wClientNotes'); if(no) no.value=wizardData.notes||'';
+}
+function selectSep(el){
+  document.querySelectorAll('.sep-opt').forEach(e=>e.classList.remove('selected'));
+  el.classList.add('selected');
+  const wrap=document.getElementById('sepCustomWrap');
+  if(el.dataset.sep==='custom'){ wrap.style.display='flex'; }
+  else{ wrap.style.display='none'; wizardData.separator=el.dataset.sep; }
+}
+function selectColor(color,el){ wizardData.color=color; document.querySelectorAll('.color-swatch').forEach(e=>e.classList.remove('selected')); el.classList.add('selected'); }
+function togglePlat(inp){ inp.closest('.plat-chip').classList.toggle('checked',inp.checked); }
+function addCustomPlat(){
+  const inp=document.getElementById('platCustomInput'); if(!inp) return;
+  const val=inp.value.trim(); if(!val){ showToast('Escribe el nombre de la plataforma','err'); return; }
+  const key=val.toLowerCase().replace(/\s+/g,'_');
+  if(document.querySelector(`[data-plat="custom-${key}"]`)){ showToast('Ya existe','err'); return; }
+  const label=document.createElement('label');
+  label.className='plat-chip custom checked'; label.dataset.plat='custom-'+key;
+  label.innerHTML=`<input type="checkbox" value="${esc(key)}" checked onchange="togglePlat(this)"> ${esc(val)}`;
+  document.getElementById('platList').appendChild(label);
+  inp.value='';
+}
+
+/* ── STEP 2 ── */
+function buildStep2(){
+  return `<div class="wizard-card">
+    <div class="wizard-card-title">Niveles de taxonomía</div>
+    <div class="wizard-card-sub">Define cuántos niveles tiene la taxonomía, cuántos campos cada uno y el separador por nivel.</div>
+    <div class="levels-list" id="levelsList">${wizardData.levels.map((l,li)=>buildLevelRow(l,li)).join('')}</div>
+    <button class="add-dashed-btn" onclick="addLevel()">+ Agregar nivel</button>
+    <div class="wizard-nav">
+      <button class="page-btn" onclick="wizardBack(2)">← Atrás</button>
+      <span class="wizard-nav-info">Paso 2 de 4</span>
+      <button class="page-btn primary" onclick="wizardNext(2)">Siguiente →</button>
+    </div>
+  </div>`;
+}
+function buildLevelRow(l,li){
+  const isCustomSep=!['_','-','|','/'].includes(l.separator||'_');
+  return `<div class="level-row" id="lr-${li}">
+    <div class="level-row-main">
+      <span class="level-num">${li+1}</span>
+      <input type="text" class="form-input" style="flex:1" placeholder="Nombre del nivel (ej. Campaign)"
+        value="${esc(l.name)}" onchange="wizardData.levels[${li}].name=this.value">
+      <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0">
+        <span style="font-size:9px;color:var(--txt3);font-family:var(--fm)">Campos</span>
+        <input type="number" class="field-count-input" min="1" max="60" value="${l.fields.length}"
+          onchange="resizeFields(${li},parseInt(this.value)||1)">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0">
+        <span style="font-size:9px;color:var(--txt3);font-family:var(--fm)">Separador</span>
+        <select class="sep-mini-select" onchange="changeLevelSep(${li},this.value)" id="lsep-${li}">
+          <option value="_" ${(l.separator||'_')==='_'?'selected':''}>_</option>
+          <option value="-" ${(l.separator||'_')==='-'?'selected':''}>—</option>
+          <option value="|" ${(l.separator||'_')==='|'?'selected':''}>|</option>
+          <option value="/" ${(l.separator||'_')==='/'?'selected':''}>/ </option>
+          <option value="custom" ${isCustomSep?'selected':''}>Otro</option>
+        </select>
+      </div>
+      <input type="text" class="sep-mini-custom" id="lsep-custom-${li}" maxlength="3"
+        placeholder="sep" value="${isCustomSep?l.separator:''}"
+        style="display:${isCustomSep?'block':'none'}"
+        onchange="wizardData.levels[${li}].separator=this.value||'_'">
+      ${wizardData.levels.length>1?`<button class="level-del" onclick="removeLevel(${li})">✕</button>`:'<span style="width:26px"></span>'}
+    </div>
+  </div>`;
+}
+function changeLevelSep(li,val){
+  const custom=document.getElementById('lsep-custom-'+li);
+  if(val==='custom'){ custom.style.display='block'; }
+  else{ custom.style.display='none'; wizardData.levels[li].separator=val; }
+}
+function addLevel(){
+  wizardData.levels.push({id:genId(),name:'',separator:wizardData.separator,fields:Array.from({length:5},(_,i)=>mkField(i))});
+  document.getElementById('levelsList').innerHTML=wizardData.levels.map((l,li)=>buildLevelRow(l,li)).join('');
+}
+function removeLevel(li){
+  if(wizardData.levels.length<=1){ showToast('Debe haber al menos un nivel','err'); return; }
+  wizardData.levels.splice(li,1);
+  document.getElementById('levelsList').innerHTML=wizardData.levels.map((l,li)=>buildLevelRow(l,li)).join('');
+}
+function resizeFields(li,count){
+  const level=wizardData.levels[li]; const cur=level.fields.length;
+  if(count>cur) for(let i=cur;i<count;i++) level.fields.push(mkField(i));
+  else level.fields=level.fields.slice(0,count);
+}
+
+/* ── STEP 3: FIELDS EDITOR — sequential sub-wizard ── */
+let activeFieldLevelIdx=0;
+
+function buildStep3Shell(){
+  const total=wizardData.levels.length;
+  const li=activeFieldLevelIdx;
+  const level=wizardData.levels[li];
+  const isLast=li===total-1;
+  const sep=level.separator||wizardData.separator;
+
+  // Sub-navigation: one node per level
+  const subNav=wizardData.levels.map((l,i)=>{
+    const filled=l.fields.filter(f=>f.name.trim()).length;
+    const isDone=i<li||(i===li&&filled===l.fields.length&&filled>0);
+    const isActive=i===li;
+    const statusTxt=i<li?(filled+'/'+l.fields.length+' ✓'):filled>0?(filled+'/'+l.fields.length):l.fields.length+' campos';
+    const sepEl=i<total-1?`<div class="lsnav-sep ${i<li?'done':''}"></div>`:'';
+    return `<div class="lsnav-step ${isActive?'active':''} ${isDone&&!isActive?'done':''}" onclick="jumpToLevel(${i})">
+      <div class="lsnav-num">${isDone&&!isActive?'✓':(i+1)}</div>
+      <div class="lsnav-info">
+        <span class="lsnav-label">${esc(l.name)||'Nivel '+(i+1)}</span>
+        <span class="lsnav-status">${statusTxt}</span>
+      </div>
+    </div>${sepEl}`;
+  }).join('');
+
+  // Nav buttons
+  const backBtn=li===0
+    ? `<button class="page-btn" onclick="wizardBack(3)">← Atrás</button>`
+    : `<button class="page-btn" onclick="levelBack()">← Nivel anterior</button>`;
+  const nextBtn=isLast
+    ? `<button class="page-btn primary" onclick="wizardNext(3)">Continuar al paso 4 →</button>`
+    : `<button class="page-btn primary" onclick="levelNext()">Siguiente nivel →</button>`;
+
+  return `<div class="wizard-card" style="padding:0;overflow:hidden">
+    <div style="padding:20px 28px 12px">
+      <div class="wizard-card-title">Campos y valores</div>
+      <div class="wizard-card-sub" style="margin-bottom:0">Define nombre, tipo y sub-taxonomía de cada campo. Completa cada nivel antes de avanzar al siguiente.</div>
+    </div>
+    <div class="level-subnav" id="levelSubnav">${subNav}</div>
+    <div class="level-panel-body" id="fieldEditorPanel">
+      <div class="level-context-bar">
+        <span class="level-context-name">${esc(level.name)||'Nivel '+(li+1)}</span>
+        <span class="level-context-meta">Nivel ${li+1} de ${total} · ${level.fields.length} campos</span>
+        <span class="level-context-sep">sep: "${sep}"</span>
+      </div>
+      <!-- fields injected by renderStep3Fields -->
+    </div>
+    <div style="padding:16px 24px;border-top:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center;background:var(--s1)">
+      ${backBtn}
+      <span style="font-size:11px;color:var(--txt3);font-family:var(--fm)">Paso 3 de 4 · Nivel ${li+1}/${total}</span>
+      ${nextBtn}
+    </div>
+  </div>`;
+}
+
+function jumpToLevel(li){
+  // Allow jumping back to any previous level, or to current
+  if(li<=activeFieldLevelIdx){ activeFieldLevelIdx=li; renderWizardContent(); return; }
+  // Forward jump: only if current level has at least one named field
+  const cur=wizardData.levels[activeFieldLevelIdx];
+  const named=cur.fields.filter(f=>f.name.trim()).length;
+  if(named===0){ showToast('Nombra al menos un campo antes de avanzar','err'); return; }
+  activeFieldLevelIdx=li; renderWizardContent();
+}
+
+function levelNext(){
+  const cur=wizardData.levels[activeFieldLevelIdx];
+  const named=cur.fields.filter(f=>f.name.trim()).length;
+  if(named===0){ showToast('Nombra al menos un campo para continuar','err'); return; }
+  activeFieldLevelIdx++;
+  renderWizardContent();
+  // Scroll wizard to top
+  document.getElementById('wizardContent').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function levelBack(){
+  if(activeFieldLevelIdx>0){ activeFieldLevelIdx--; renderWizardContent(); }
+}
+function renderStep3Fields(li){
+  const panel=document.getElementById('fieldEditorPanel'); if(!panel) return;
+  const level=wizardData.levels[li];
+  const sep=level.separator||wizardData.separator;
+
+  // Keep the context bar, replace only the table below it
+  const existing=panel.querySelector('.fields-table-wrap');
+  const tableWrap=document.createElement('div');
+  tableWrap.className='fields-table-wrap';
+  tableWrap.innerHTML=`<table class="fields-table">
+    <thead><tr>
+      <th>Pos</th>
+      <th style="min-width:160px">Nombre del campo</th>
+      <th style="width:80px;text-align:center">Libre</th>
+      <th style="min-width:220px">Sub-taxonomía</th>
+      <th>Valores rápidos (inline)</th>
+    </tr></thead>
+    <tbody id="ftbody-${li}"></tbody>
+  </table>`;
+
+  if(existing) existing.replaceWith(tableWrap);
+  else panel.appendChild(tableWrap);
+
+  const tbody=document.getElementById('ftbody-'+li);
+  level.fields.forEach((field,fi)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="pos-cell">${fi+1}</td>
+      <td><input type="text" class="ft-input" placeholder="Ej. País"
+        value="${esc(field.name)}"
+        onchange="wizardData.levels[${li}].fields[${fi}].name=this.value;refreshSubnav()"></td>
+      <td style="text-align:center">
+        <input type="checkbox" class="ft-toggle" ${field.free?'checked':''}
+          onchange="setFieldFree(${li},${fi},this.checked)"></td>
+      <td><div id="subtax-cell-${li}-${fi}"></div></td>
+      <td><div class="vals-cell" id="valscell-${li}-${fi}"></div></td>`;
+    tbody.appendChild(tr);
+    renderSubTaxCell(li,fi);
+    renderValsCell(li,fi);
+  });
+}
+
+// Refreshes only the sub-nav status counts without rebuilding everything
+function refreshSubnav(){
+  const nav=document.getElementById('levelSubnav'); if(!nav) return;
+  const total=wizardData.levels.length;
+  nav.innerHTML=wizardData.levels.map((l,i)=>{
+    const filled=l.fields.filter(f=>f.name.trim()).length;
+    const li=activeFieldLevelIdx;
+    const isDone=i<li||(i===li&&filled===l.fields.length&&filled>0);
+    const isActive=i===li;
+    const statusTxt=i<li?(filled+'/'+l.fields.length+' ✓'):filled>0?(filled+'/'+l.fields.length):l.fields.length+' campos';
+    const sepEl=i<total-1?`<div class="lsnav-sep ${i<li?'done':''}"></div>`:'';
+    return `<div class="lsnav-step ${isActive?'active':''} ${isDone&&!isActive?'done':''}" onclick="jumpToLevel(${i})">
+      <div class="lsnav-num">${isDone&&!isActive?'✓':(i+1)}</div>
+      <div class="lsnav-info">
+        <span class="lsnav-label">${esc(l.name)||'Nivel '+(i+1)}</span>
+        <span class="lsnav-status">${statusTxt}</span>
+      </div>
+    </div>${sepEl}`;
+  }).join('');
+}
+function setFieldFree(li,fi,v){ wizardData.levels[li].fields[fi].free=v; wizardData.levels[li].fields[fi].manual=v; renderValsCell(li,fi); }
+
+/* Sub-taxonomy cell */
+function renderSubTaxCell(li,fi){
+  const cell=document.getElementById(`subtax-cell-${li}-${fi}`); if(!cell) return;
+  const field=wizardData.levels[li].fields[fi];
+  const st=field.subTax||{enabled:false,separator:'-',subFields:[]};
+  field.subTax=st;
+  if(field.free){ cell.innerHTML=`<span style="font-size:10px;color:var(--txt3)">N/A (campo libre)</span>`; return; }
+
+  let subFieldsHtml='';
+  if(st.enabled){
+    subFieldsHtml=`<div style="margin-top:6px;padding:8px;background:rgba(124,58,237,.05);border-radius:6px;border:1px solid rgba(124,58,237,.15)">
+      <div style="font-size:10px;color:#7C3AED;font-family:var(--fm);margin-bottom:6px;font-weight:500">Sub-campos (sep: "${st.separator}"):</div>
+      ${(st.subFields||[]).map((sf,si)=>`
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+          <span style="font-family:var(--fm);font-size:10px;color:var(--txt3);width:16px;text-align:center">${si+1}</span>
+          <input type="text" class="ft-input" style="flex:1" placeholder="Nombre sub-campo"
+            value="${esc(sf.name)}"
+            onchange="wizardData.levels[${li}].fields[${fi}].subTax.subFields[${si}].name=this.value">
+          <input type="checkbox" class="ft-toggle" style="width:26px;height:15px" ${sf.free?'checked':''}
+            onchange="setSubFieldFree(${li},${fi},${si},this.checked)" title="Libre">
+          <button onclick="removeSubField(${li},${fi},${si})" style="width:20px;height:20px;border:none;background:none;cursor:pointer;color:var(--txt3);font-size:12px" title="Eliminar">✕</button>
+        </div>`).join('')}
+      <button onclick="addSubField(${li},${fi})" style="font-size:10px;color:#7C3AED;background:none;border:1px dashed rgba(124,58,237,.3);border-radius:4px;padding:3px 8px;cursor:pointer;margin-top:2px">+ sub-campo</button>
+    </div>`;
+  }
+
+  cell.innerHTML=`<div class="sub-tax-row">
+    <span class="sub-tax-label">Sub-taxonomía</span>
+    <input type="checkbox" class="sub-tax-toggle" ${st.enabled?'checked':''}
+      onchange="toggleSubTax(${li},${fi},this.checked)">
+    ${st.enabled?`<div class="sub-tax-config">
+      <span style="font-size:10px;color:var(--txt3)">Sep:</span>
+      <input type="text" class="sub-sep-input" maxlength="3" value="${esc(st.separator)}"
+        onchange="wizardData.levels[${li}].fields[${fi}].subTax.separator=this.value||'-'">
+      <span class="sub-count-label">${(st.subFields||[]).length} sub-campos</span>
+    </div>`:''}
+  </div>${subFieldsHtml}`;
+}
+function toggleSubTax(li,fi,enabled){
+  const st=wizardData.levels[li].fields[fi].subTax;
+  st.enabled=enabled;
+  if(enabled && (!st.subFields||st.subFields.length===0)) st.subFields=[{name:'',free:false,values:{}},{name:'',free:false,values:{}}];
+  renderSubTaxCell(li,fi);
+}
+function addSubField(li,fi){ wizardData.levels[li].fields[fi].subTax.subFields.push({name:'',free:false,values:{}}); renderSubTaxCell(li,fi); }
+function removeSubField(li,fi,si){ wizardData.levels[li].fields[fi].subTax.subFields.splice(si,1); renderSubTaxCell(li,fi); }
+function setSubFieldFree(li,fi,si,v){ wizardData.levels[li].fields[fi].subTax.subFields[si].free=v; }
+
+/* Vals cell (inline) */
+function renderValsCell(li,fi){
+  const field=wizardData.levels[li].fields[fi];
+  const cell=document.getElementById(`valscell-${li}-${fi}`); if(!cell) return;
+  if(field.free){ cell.innerHTML=`<span style="font-size:11px;color:var(--txt3)">Campo libre</span>`; return; }
+  if(field.subTax&&field.subTax.enabled){ cell.innerHTML=`<span style="font-size:11px;color:var(--txt3)">Carga en paso 4</span>`; return; }
+  const entries=Object.entries(field.values||{});
+  cell.innerHTML=`
+    <div class="vals-chips">${entries.slice(0,10).map(([k,v])=>`<span class="val-chip" title="${esc(v)}" onclick="removeVal(${li},${fi},'${esc(k)}')">${esc(k)}</span>`).join('')}${entries.length>10?`<span style="font-size:10px;color:var(--txt3)">+${entries.length-10} más</span>`:''}</div>
+    <div class="add-val-inline">
+      <input type="text" class="av-key" id="avk-${li}-${fi}" placeholder="KEY" maxlength="30">
+      <input type="text" class="av-desc" id="avd-${li}-${fi}" placeholder="Descripción">
+      <button class="av-add" onclick="addVal(${li},${fi})">+ Agregar</button>
+    </div>`;
+}
+function addVal(li,fi){
+  const k=(document.getElementById(`avk-${li}-${fi}`)?.value||'').trim().toUpperCase();
+  const v=(document.getElementById(`avd-${li}-${fi}`)?.value||'').trim();
+  if(!k){ showToast('Ingresa una KEY','err'); return; }
+  if(!wizardData.levels[li].fields[fi].values) wizardData.levels[li].fields[fi].values={};
+  wizardData.levels[li].fields[fi].values[k]=v||k;
+  document.getElementById(`avk-${li}-${fi}`).value='';
+  document.getElementById(`avd-${li}-${fi}`).value='';
+  renderValsCell(li,fi);
+}
+function removeVal(li,fi,key){ delete wizardData.levels[li].fields[fi].values[key]; renderValsCell(li,fi); }
+
+/* ── STEP 4: CATALOGS ── */
+function buildStep4(){
+  const levels=wizardData.levels;
+  const cards=levels.map((l,li)=>{
+    const total=l.fields.filter(f=>!f.free).length;
+    const withVals=l.fields.filter(f=>!f.free&&Object.keys(f.values||{}).length>0).length;
+    const pct=total>0?Math.round(withVals/total*100):100;
+    const statusColor=pct===100?'var(--ok)':pct>0?'var(--warn)':'var(--err)';
+    const statusText=pct===100?'Completo':pct>0?`${withVals}/${total} campos con valores`:'Sin valores';
+    return `<div class="catalog-card">
+      <div class="catalog-card-header">
+        <span class="catalog-card-name">${esc(l.name)}</span>
+        <span style="font-family:var(--fm);font-size:11px;font-weight:500;color:${statusColor}">${pct}%</span>
+      </div>
+      <div class="catalog-card-meta">${l.fields.length} campos · ${total} controlados</div>
+      <div class="catalog-status-bar"><div class="catalog-status-fill" style="width:${pct}%;background:${statusColor}"></div></div>
+      <div class="catalog-card-actions">
+        <button class="cat-btn" onclick="downloadLevelTemplate(${li})">↓ Descargar template</button>
+        <label class="cat-btn primary" style="cursor:pointer">
+          ↑ Cargar Excel
+          <input type="file" class="catalog-upload-input" accept=".xlsx,.xls,.csv" onchange="uploadLevelCatalog(this,${li})">
+        </label>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="wizard-card">
+    <div class="wizard-card-title">Catálogos de valores</div>
+    <div class="wizard-card-sub">Para cada nivel, descarga el template Excel, llénalo con los valores permitidos de cada campo y súbelo. También puedes agregar valores directamente en el paso anterior para campos pequeños.</div>
+    <div class="step4-summary">
+      <strong>Flujo recomendado:</strong> Descarga el template → el Excel ya tiene los nombres de los campos como encabezados → llena los valores bajo cada columna → sube el archivo. <br>
+      Para sub-taxonomías: el template incluye un tab separado con los sub-campos de cada campo que tenga sub-taxonomía habilitada.
+    </div>
+    <div class="step4-grid" id="catalogCards">${cards}</div>
+    <div class="wizard-nav">
+      <button class="page-btn" onclick="wizardBack(4)">← Atrás</button>
+      <span class="wizard-nav-info">Paso 4 de 4</span>
+      <button class="page-btn primary" onclick="saveClient()">✓ Guardar cliente</button>
+    </div>
+  </div>`;
+}
+
+async function downloadLevelTemplate(li){
+  const level=wizardData.levels[li];
+  const client=wizardData;
+  const wb=new ExcelJS.Workbook(); wb.creator='TaxoPlatform';
+  const HDR='FF013334', FG='FFFFFFFF', ALT='FFF7F8FA';
+
+  // Main values sheet
+  const ws=wb.addWorksheet(level.name+' — Valores',{views:[{state:'frozen',xSplit:0,ySplit:2}]});
+  const controlledFields=level.fields.filter(f=>!f.free&&(!f.subTax||!f.subTax.enabled));
+  ws.columns=[{header:'KEY',key:'k',width:20},{header:'Descripción',key:'d',width:40},...controlledFields.map(f=>({header:f.name||'Campo '+f.position,key:'f'+f.position,width:20}))];
+  // Header row 1: field names spanning
+  const hdrData=['KEY','Descripción',...controlledFields.map(f=>f.name||'Campo '+f.position)];
+  const r1=ws.addRow(hdrData); r1.height=24;
+  r1.eachCell(cell=>{ cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:HDR}}; cell.font={bold:true,name:'Calibri',size:10,color:{argb:FG}}; cell.alignment={horizontal:'center',vertical:'middle'}; cell.border={bottom:{style:'medium',color:{argb:'FF999999'}}}; });
+  // Header row 2: instructions
+  const r2=ws.addRow(['Código único','Descripción del valor',...controlledFields.map(()=>'Llena valores bajo cada campo')]);
+  r2.height=18; r2.eachCell(cell=>{ cell.font={name:'Calibri',size:9,color:{argb:'FF888888'},italic:true}; cell.alignment={horizontal:'center'}; });
+  // Example rows with existing values
+  const maxVals=Math.max(...controlledFields.map(f=>Object.keys(f.values||{}).length),3);
+  for(let vi=0;vi<maxVals;vi++){
+    const rowData=[vi===0?'MX':'',vi===0?'México':''];
+    controlledFields.forEach(f=>{ const entries=Object.entries(f.values||{}); rowData.push(vi<entries.length?entries[vi][0]:''); rowData.push(); });
+    // Flat format: each field gets its own pair of columns (KEY | Desc)
+  }
+  // Flat format: one row per value, columns = fields
+  const flatRows={}; let maxR=0;
+  controlledFields.forEach((f,fi)=>{ const entries=Object.entries(f.values||{}); maxR=Math.max(maxR,entries.length); });
+  for(let vi=0;vi<Math.max(maxR,5);vi++){
+    const rowData=[];
+    controlledFields.forEach(f=>{ const entries=Object.entries(f.values||{}); rowData.push(vi<entries.length?entries[vi][0]:''); rowData.push(vi<entries.length?entries[vi][1]:''); });
+    if(rowData.length){
+      const dr=ws.addRow(rowData); dr.height=15;
+      const bg=vi%2===0?'FFFFFFFF':ALT;
+      dr.eachCell(cell=>{ cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:bg}}; cell.font={name:'Calibri',size:10}; });
+    }
+  }
+  // Redefine columns to KEY|Desc pairs per field
+  const cols2=[];
+  controlledFields.forEach(f=>{ cols2.push({width:20},{width:35}); });
+  ws.columns=cols2;
+  // Fix header row — prefix with field position number for clarity
+  ws.getRow(1).values=[...controlledFields.flatMap(f=>[f.position+' — '+(f.name||'Campo '+f.position),'Descripción'])];
+  ws.getRow(2).values=[...controlledFields.flatMap(()=>['KEY (código único)','Descripción del valor'])];
+  ws.getRow(1).eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:HDR}}; c.font={bold:true,name:'Calibri',size:10,color:{argb:FG}}; c.alignment={horizontal:'center',vertical:'middle'}; });
+  ws.getRow(2).eachCell(c=>{ c.font={name:'Calibri',size:9,color:{argb:'FF888888'},italic:true}; c.alignment={horizontal:'center'}; });
+
+  // Sub-taxonomy sheets — same structure as main fields (KEY|Desc pairs per sub-field)
+  const subFields=level.fields.filter(f=>f.subTax&&f.subTax.enabled);
+  subFields.forEach(f=>{
+    const wsub=wb.addWorksheet(f.position+' — '+esc(f.name)+' (sub)');
+    const controlledSubFields=(f.subTax.subFields||[]).filter(sf=>!sf.free);
+    if(!controlledSubFields.length) return;
+
+    // Same column structure: KEY|Desc pair per sub-field
+    wsub.columns=controlledSubFields.flatMap((_,si)=>[{width:20},{width:35}]);
+
+    // Row 1: sub-field names with position prefix  (1 — Mes, 2 — Objetivo, ...)
+    const r1=wsub.addRow(controlledSubFields.flatMap((sf,si)=>[
+      (si+1)+' — '+(sf.name||'Sub-campo '+(si+1)),
+      'Descripción'
+    ]));
+    r1.height=24;
+    r1.eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:HDR}}; c.font={bold:true,name:'Calibri',size:10,color:{argb:FG}}; c.alignment={horizontal:'center',vertical:'middle'}; c.border={bottom:{style:'medium',color:{argb:'FF999999'}}}; });
+
+    // Row 2: KEY / Desc instruction labels
+    const r2=wsub.addRow(controlledSubFields.flatMap(()=>['KEY (código único)','Descripción del valor']));
+    r2.height=18;
+    r2.eachCell(c=>{ c.font={name:'Calibri',size:9,color:{argb:'FF888888'},italic:true}; c.alignment={horizontal:'center'}; });
+
+    // Data rows: existing values per sub-field, same alternating bg
+    const maxSubR=Math.max(...controlledSubFields.map(sf=>Object.keys(sf.values||{}).length),5);
+    for(let vi=0;vi<maxSubR;vi++){
+      const rowData=controlledSubFields.flatMap(sf=>{
+        const entries=Object.entries(sf.values||{});
+        return vi<entries.length?[entries[vi][0],entries[vi][1]]:['',''];
+      });
+      const dr=wsub.addRow(rowData); dr.height=15;
+      const bg=vi%2===0?'FFFFFFFF':ALT;
+      dr.eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:bg}}; c.font={name:'Calibri',size:10}; });
+    }
+  });
+
+  const buf=await wb.xlsx.writeBuffer();
+  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`template_${(wizardData.name||'cliente').replace(/\s+/g,'_')}_${level.name}_${new Date().toISOString().slice(0,10)}.xlsx`;
+  a.click(); URL.revokeObjectURL(a.href); showToast('✓ Template descargado: '+level.name);
+}
+
+async function uploadLevelCatalog(input,li){
+  const file=input.files[0]; if(!file) return;
+  const level=wizardData.levels[li];
+  try{
+    const sheets=await readFileUniversal(file);
+    let added=0;
+
+    // ── Hoja principal: campos controlados regulares ──
+    // Formato: KEY|Desc por campo (pares de columnas)
+    const mainSheet=sheets[0];
+    if(mainSheet){
+      const data=mainSheet.data||[];
+      const controlledFields=level.fields.filter(f=>!f.free&&(!f.subTax||!f.subTax.enabled));
+      if(data.length){
+        // Skip rows 1 and 2 (header + instruction) — start from row index 2
+        // Detect by checking if first cell looks like a real KEY (not header text)
+        const headers=Object.keys(data[0]||{});
+        const SKIP_WORDS=new Set(['KEY','DESCRIPCIÓN','DESCRIPCION','CÓDIGO ÚNICO','CODIGO UNICO','LLENA VALORES BAJO CADA CAMPO']);
+        controlledFields.forEach((field,fi)=>{
+          const ki=fi*2, di=fi*2+1;
+          const keyCol=headers[ki], descCol=headers[di];
+          if(!keyCol) return;
+          data.forEach(row=>{
+            const k=String(row[keyCol]||'').trim().toUpperCase();
+            const v=String(row[descCol]||'').trim();
+            if(!k||SKIP_WORDS.has(k)||k.startsWith('→')||k.startsWith('←')) return;
+            if(!field.values) field.values={};
+            field.values[k]=v||k;
+            added++;
+          });
+        });
+      }
+    }
+
+    // ── Hojas de sub-taxonomía ──
+    // Nombre de hoja: "{pos} — {fieldName} (sub)"
+    // Formato: misma estructura KEY|Desc por sub-campo (pares de columnas)
+    const SKIP_WORDS_SUB=new Set(['KEY','DESCRIPCIÓN','DESCRIPCION','CÓDIGO ÚNICO','CODIGO UNICO']);
+    const subFields=level.fields.filter(f=>f.subTax&&f.subTax.enabled&&!f.free);
+
+    subFields.forEach(field=>{
+      // Match sheet by position prefix or field name
+      const matchSheet=sheets.find(s=>{
+        const sn=s.sheetName.toLowerCase();
+        return sn.includes('(sub)') && (
+          sn.startsWith(field.position+' —') ||
+          sn.startsWith(field.position+' -') ||
+          sn.includes(field.name.toLowerCase())
+        );
+      });
+      if(!matchSheet) return;
+
+      const data=matchSheet.data||[];
+      if(!data.length) return;
+      const headers=Object.keys(data[0]||{});
+      const subFieldsControlled=(field.subTax.subFields||[]).filter(sf=>!sf.free);
+
+      subFieldsControlled.forEach((sf,si)=>{
+        const ki=si*2, di=si*2+1;
+        const keyCol=headers[ki], descCol=headers[di];
+        if(!keyCol) return;
+        data.forEach(row=>{
+          const k=String(row[keyCol]||'').trim().toUpperCase();
+          const v=String(row[descCol]||'').trim();
+          if(!k||SKIP_WORDS_SUB.has(k)||k.startsWith('→')) return;
+          if(!sf.values) sf.values={};
+          sf.values[k]=v||k;
+          added++;
+        });
+      });
+    });
+
+    // Refresh catalog cards
+    document.getElementById('catalogCards').innerHTML=wizardData.levels.map((l,idx)=>{
+      const total=l.fields.filter(f=>!f.free).length;
+      const withVals=l.fields.filter(f=>!f.free&&(
+        (!f.subTax||!f.subTax.enabled)?Object.keys(f.values||{}).length>0:
+        (f.subTax.subFields||[]).filter(sf=>!sf.free&&Object.keys(sf.values||{}).length>0).length>0
+      )).length;
+      const pct=total>0?Math.round(withVals/total*100):100;
+      const sc=pct===100?'var(--ok)':pct>0?'var(--warn)':'var(--err)';
+      return `<div class="catalog-card">
+        <div class="catalog-card-header"><span class="catalog-card-name">${esc(l.name)}</span><span style="font-family:var(--fm);font-size:11px;font-weight:500;color:${sc}">${pct}%</span></div>
+        <div class="catalog-card-meta">${l.fields.length} campos · ${total} controlados</div>
+        <div class="catalog-status-bar"><div class="catalog-status-fill" style="width:${pct}%;background:${sc}"></div></div>
+        <div class="catalog-card-actions">
+          <button class="cat-btn" onclick="downloadLevelTemplate(${idx})">↓ Descargar template</button>
+          <label class="cat-btn primary" style="cursor:pointer">↑ Cargar Excel<input type="file" class="catalog-upload-input" accept=".xlsx,.xls,.csv" onchange="uploadLevelCatalog(this,${idx})"></label>
+        </div>
+      </div>`;
+    }).join('');
+
+    showToast(`✓ ${added} valores cargados en ${level.name}`,'ok');
+    // B2: log catalog upload
+    if(!wizardData.catalogLog) wizardData.catalogLog=[];
+    wizardData.catalogLog.push({date:new Date().toISOString().slice(0,10), desc:`${level.name} · ${added} valores cargados desde Excel`});
+  }catch(e){ showToast('Error: '+e.message,'err'); console.error(e); }
+  input.value='';
+}
+
+/* ── WIZARD NAVIGATION ── */
+function wizardNext(from){
+  if(from===1){
+    const name=document.getElementById('wClientName')?.value.trim()||'';
+    if(!name){ showToast('El nombre es obligatorio','err'); return; }
+    wizardData.name=name;
+    wizardData.notes=document.getElementById('wClientNotes')?.value.trim()||'';
+    // Platforms
+    wizardData.platforms=[...document.querySelectorAll('#platList input:checked')].map(i=>i.value);
+    // Separator
+    const selSep=document.querySelector('.sep-opt.selected');
+    if(selSep?.dataset.sep==='custom'){
+      const custom=document.getElementById('sepCustomInput')?.value.trim();
+      wizardData.separator=custom||'_';
+    } else { wizardData.separator=selSep?.dataset.sep||'_'; }
+  }
+  if(from===2){
+    // Sync custom separators
+    wizardData.levels.forEach((l,li)=>{
+      const sel=document.getElementById('lsep-'+li);
+      if(sel?.value==='custom'){ const cv=document.getElementById('lsep-custom-'+li)?.value.trim(); l.separator=cv||'_'; }
+      else if(sel){ l.separator=sel.value; }
+      if(!l.name.trim()){ showToast('Todos los niveles deben tener nombre','err'); return; }
+    });
+  }
+  if(from===3){
+    // Validate last level has at least one named field
+    const cur=wizardData.levels[activeFieldLevelIdx];
+    const named=cur.fields.filter(f=>f.name.trim()).length;
+    if(named===0){ showToast('Nombra al menos un campo para continuar','err'); return; }
+    activeFieldLevelIdx=0; // reset for next time
+  }
+  wizardStep=from+1; renderWizardSteps(); renderWizardContent();
+  activeFieldLevelIdx=0;
+}
+function wizardBack(from){ wizardStep=from-1; if(from===4) activeFieldLevelIdx=wizardData.levels.length-1; else activeFieldLevelIdx=0; renderWizardSteps(); renderWizardContent(); }
+
+function saveClient(){
+  if(!wizardData) return;
+  wizardData.levels.forEach(l=>{ l.fields=l.fields.map((f,i)=>({...f,position:i+1})); });
+  saveClientToDB(wizardData);
+  setActiveClient(wizardData.id);
+  renderAll();
+  const isEdit=!!wizardEditingId;
+  wizardEditingId=null; const saved=wizardData; wizardData=null;
+  nav('client-detail',saved.id);
+  showToast(isEdit?'✓ Cliente actualizado':'✓ Cliente creado: '+saved.name,'ok');
+}
+
+// ═══════════════════════════════════════════════════
+//  M6 — VALIDATION UI
+// ═══════════════════════════════════════════════════
+let validationData=null, activeResultLevel=null, filteredRows=[], currentPage=1;
+const PAGE_SIZE=50;
+let currentStatusFilter='';
+
+function renderValidateView(){
+  const client=getActiveClient();
+  document.getElementById('noClientWarn').style.display=client?'none':'block';
+  document.getElementById('validateTitle').textContent=client?'Validar — '+client.name:'Validar taxonomías';
+  // D1: check catalog health on view entry
+  if(client) checkCatalogHealth(client);
+  // C2: init manual validator
+  initManualValidator();
+}
+
+// D1 — Detector de catálogos vacíos
+function checkCatalogHealth(client){
+  const banner=document.getElementById('catalogWarnBanner');
+  const list=document.getElementById('catalogWarnList');
+  const emptyFields=[];
+  client.levels.forEach(l=>{
+    l.fields.forEach(f=>{
+      if(!f.free&&(!f.subTax||!f.subTax.enabled)&&Object.keys(f.values||{}).length===0){
+        emptyFields.push(l.name+' · pos.'+f.position+(f.name?' — '+f.name:''));
+      }
+    });
+  });
+  if(emptyFields.length>0){
+    list.innerHTML=emptyFields.map(lbl=>`<span class="catalog-warn-chip">${esc(lbl)}</span>`).join('');
+    banner.classList.add('visible');
+  } else {
+    banner.classList.remove('visible');
+  }
+}
+
+function resetValidation(){
+  validationData=null; activeResultLevel=null; filteredRows=[]; currentPage=1;
+  document.getElementById('resultsDashboard').style.display='none';
+  document.getElementById('uploadArea').style.display='block';
+  document.getElementById('btnExportResults').disabled=true;
+  document.getElementById('btnNewFile').style.display='none';
+  document.getElementById('btnReview').style.display='none';
+}
+function handleFileInput(input){ if(!input.files.length) return; loadFile(input.files[0]); input.value=''; }
+
+async function loadFile(file){
+  const client=getActiveClient();
+  if(!client){ showToast('Selecciona un cliente primero','err'); return; }
+  if(!SUPPORTED_EXTS.test(file.name)){ showToast('Formato no soportado','err'); return; }
+  showProgress('Leyendo: '+file.name);
+  try{
+    const sheets=await readFileUniversal(file);
+    const levelMap={}; client.levels.forEach(l=>{ levelMap[l.id]=[]; });
+    for(const {sheetName,data} of sheets){
+      let matchedLevel=null;
+      const detected=detectLevel(sheetName);
+      if(detected){ const li=['campaign','placement','creative'].indexOf(detected); if(li>=0&&client.levels[li]) matchedLevel=client.levels[li]; }
+      if(!matchedLevel){ const si=sheets.findIndex(s=>s.sheetName===sheetName); if(client.levels[si]) matchedLevel=client.levels[si]; }
+      if(!matchedLevel) continue;
+      const sep=matchedLevel.separator||client.separator;
+      for(const row of data){
+        const vals=Object.values(row);
+        const firstVal=String(vals[0]||'').trim();
+        let platform='', rawName='';
+        const isPlat=Object.keys(PLATFORM_MAP).includes(firstVal.toLowerCase())||client.platforms.map(p=>p.toLowerCase()).includes(firstVal.toLowerCase());
+        if(isPlat){ platform=firstVal.toLowerCase(); rawName=String(vals[1]||'').trim(); }
+        else{ rawName=firstVal; }
+        if(!rawName||rawName.length<3) continue;
+        if(rawName.toLowerCase()===sheetName.toLowerCase()) continue;
+        const v=validateTaxonomy(rawName,matchedLevel.fields,sep);
+        levelMap[matchedLevel.id].push({rawName,platform,level:matchedLevel.id,levelName:matchedLevel.name,sheetName,validation:v,hasError:v.errors.length>0});
+      }
+    }
+    hideProgress();
+    const total=Object.values(levelMap).reduce((s,r)=>s+r.length,0);
+    if(!total){ showToast('No se encontraron taxonomías','err'); return; }
+    validationData={fileName:file.name,levels:levelMap,clientId:client.id};
+    // B3: save last session summary into client record
+    const sessionSummary={
+      date: new Date().toISOString().slice(0,10),
+      file: file.name,
+      levels: {}
+    };
+    client.levels.forEach(l=>{
+      const rows=levelMap[l.id]||[];
+      const errs=rows.filter(r=>r.hasError).length;
+      sessionSummary.levels[l.name]={total:rows.length,errors:errs,
+        pct:rows.length>0?Math.round((rows.length-errs)/rows.length*100):null};
+    });
+    client.lastSession=sessionSummary;
+    saveClientToDB(client);
+    activeResultLevel=client.levels[0]?.id||null;
+    currentPage=1; currentStatusFilter='';
+    document.getElementById('uploadArea').style.display='none';
+    document.getElementById('resultsDashboard').style.display='block';
+    document.getElementById('btnExportResults').disabled=false;
+    document.getElementById('btnNewFile').style.display='block';
+    document.getElementById('fSearch').value='';
+    renderResultTabs(); applyFilters();
+    // Show review button if there are errors
+    const totalErrs=Object.values(levelMap).reduce((s,r)=>s+r.filter(x=>x.hasError).length,0);
+    document.getElementById('btnReview').style.display=totalErrs>0?'block':'none';
+    showToast('✓ '+total+' taxonomías analizadas');
+  }catch(e){ hideProgress(); showToast('Error: '+e.message,'err'); console.error(e); }
+}
+
+function renderResultTabs(){
+  const client=getActiveClient(); if(!client||!validationData) return;
+  document.getElementById('resultTabs').innerHTML=client.levels.map(l=>{
+    const rows=validationData.levels[l.id]||[];
+    const errs=rows.filter(r=>r.hasError).length;
+    const isActive=l.id===activeResultLevel;
+    return `<div class="result-tab ${isActive?'active':''}" onclick="switchResultLevel('${l.id}')">
+      ${esc(l.name)} <span class="rtab-badge ${!isActive&&errs>0?'err':''}">${errs>0?'⚠ '+errs:'✓ '+(rows.length-errs)}</span>
+    </div>`;
+  }).join('');
+}
+function switchResultLevel(id){ activeResultLevel=id; currentPage=1; currentStatusFilter=''; document.getElementById('fSearch').value=''; renderResultTabs(); applyFilters(); }
+function setStatusFilter(val){
+  currentStatusFilter=val; currentPage=1;
+  document.getElementById('fAll').classList.toggle('active',val==='');
+  document.getElementById('fErr').classList.toggle('active',val==='error'); document.getElementById('fErr').classList.toggle('err-f',val==='error');
+  document.getElementById('fOk').classList.toggle('active',val==='ok'); document.getElementById('fOk').classList.toggle('ok-f',val==='ok');
+  applyFilters();
+}
+let searchTimer;
+document.getElementById('fSearch').addEventListener('input',()=>{ clearTimeout(searchTimer); searchTimer=setTimeout(()=>{ currentPage=1; applyFilters(); },250); });
+
+function applyFilters(){
+  if(!validationData||!activeResultLevel) return;
+  let rows=validationData.levels[activeResultLevel]||[];
+  const search=document.getElementById('fSearch').value.toLowerCase();
+  if(search) rows=rows.filter(r=>r.rawName.toLowerCase().includes(search));
+  if(currentStatusFilter==='error') rows=rows.filter(r=>r.hasError);
+  if(currentStatusFilter==='ok') rows=rows.filter(r=>!r.hasError);
+  filteredRows=rows; renderSummary(); renderTable();
+}
+function renderSummary(){
+  const allRows=validationData.levels[activeResultLevel]||[];
+  const total=allRows.length, errs=allRows.filter(r=>r.hasError).length;
+  const pct=total>0?Math.round(errs/total*100):0;
+  document.getElementById('sumGrid').innerHTML=`
+    <div class="sum-card c-acc"><div class="sum-num n-acc">${total}</div><div class="sum-lbl">Taxonomías analizadas</div></div>
+    <div class="sum-card c-err"><div class="sum-num n-err">${errs}</div><div class="sum-lbl">Con errores · ${pct}%</div><div class="sum-bar"><div class="sum-bar-fill" style="width:${pct}%;background:var(--err)"></div></div></div>
+    <div class="sum-card c-ok"><div class="sum-num n-ok">${total-errs}</div><div class="sum-lbl">Sin errores · ${100-pct}%</div><div class="sum-bar"><div class="sum-bar-fill" style="width:${100-pct}%;background:var(--ok)"></div></div></div>
+    <div class="sum-card" style="border-color:rgba(255,92,26,.2);background:rgba(255,92,26,.03)"><div class="sum-num n-warn">${pct}%</div><div class="sum-lbl">Tasa de error</div></div>`;
+}
+function renderTable(){
+  if(!validationData||!activeResultLevel) return;
+  const client=getActiveClient();
+  const level=client?.levels.find(l=>l.id===activeResultLevel);
+  const fields=level?.fields||[];
+  const sep=level?.separator||client?.separator||'_';
+  document.getElementById('filterCount').textContent=filteredRows.length+' taxonomía'+(filteredRows.length!==1?'s':'');
+  const maxPos=Math.max(...filteredRows.map(r=>r.validation.parts.length),fields.length,1);
+  const posHdrs=[];
+  for(let p=0;p<maxPos;p++){ const f=fields[p]; posHdrs.push(`<th>${f?esc(f.name||'pos.'+(p+1)):'Extra '+(p-fields.length+1)}</th>`); }
+  document.getElementById('tblHead').innerHTML=`<tr><th>#</th><th>Plataforma</th><th>Taxonomía original</th>${posHdrs.join('')}<th>Errores</th><th>Taxonomía corregida</th><th>Estado</th></tr>`;
+  document.getElementById('emptyMsg').style.display=filteredRows.length===0?'block':'none';
+  const start=(currentPage-1)*PAGE_SIZE, pageRows=filteredRows.slice(start,start+PAGE_SIZE);
+  const tbody=document.getElementById('tblBody'); tbody.innerHTML='';
+  pageRows.forEach((row,i)=>{
+    const gi=start+i, parts=row.validation.parts, errPos=new Set(row.validation.errors.map(e=>e.position));
+    // Token display — shows sub-taxonomy parts with secondary separator
+    const taxHtml=parts.map((p,idx)=>{
+      const f=fields[idx];
+      const isFree=f&&(f.free||f.manual);
+      const isErr=errPos.has(idx);
+      const hasSub=f&&f.subTax&&f.subTax.enabled;
+      const subSep=hasSub?f.subTax.separator||'-':null;
+      let innerHtml='';
+      if(hasSub&&subSep){
+        const subParts=p.split(subSep);
+        innerHtml=subParts.map((sp,si)=>`<span class="tp-sub">${esc(sp)}</span>${si<subParts.length-1?`<span class="tp-sep-sub">${subSep}</span>`:''}`).join('');
+      } else { innerHtml=esc(p); }
+      const cls=isErr?'tp-err':(isFree?'tp-free':'tp-ok');
+      const sepHtml=idx<parts.length-1?`<span class="tp-sep">${sep}</span>`:'';
+      return `<span class="tx tp ${cls}" title="${f?'pos.'+(idx+1)+': '+esc(f.name):'Extra'}">${innerHtml}</span>${sepHtml}`;
+    }).join('');
+    // Position cells
+    const posCells=[];
+    for(let p=0;p<maxPos;p++){
+      const val=parts[p]!==undefined?parts[p]:''; const f=fields[p]; const isErr=errPos.has(p); const isFree=f&&(f.free||f.manual);
+      if(isErr&&val){
+        const err=row.validation.errors.find(e=>e.position===p);
+        if(err?.subErrors){
+          const subDetail=err.subErrors.map(se=>`<div style="font-size:10px;color:var(--err)">sub.${se.sub+1} ${esc(se.name)}: ${esc(se.found)}</div>`).join('');
+          posCells.push(`<td style="background:rgba(204,34,0,.04)"><span style="font-family:var(--fm);font-size:10px;color:var(--err)">${esc(val)}</span>${subDetail}</td>`);
+        } else {
+          const allKeys=Object.keys(err?.validValues||{});
+          const suggs=new Set(err?.suggestions||[]);
+          const topK=(err?.suggestions||[]).filter(k=>allKeys.includes(k));
+          const restK=allKeys.filter(k=>!suggs.has(k)).sort();
+          const opts=[...topK,...restK].map(k=>`<option value="${esc(k)}">${esc(k)}${err.validValues[k]?' — '+esc(err.validValues[k]):''}</option>`).join('');
+          posCells.push(`<td style="background:rgba(204,34,0,.04)"><span style="font-family:var(--fm);font-size:10px;color:var(--err);display:block">${esc(val)}</span><select class="field-select" onchange="applySugg(${gi},${p},this.value)"><option value="">— corregir —</option>${opts}</select></td>`);
+        }
+      } else {
+        const color=isErr?'var(--err)':(isFree?'var(--acc2)':(val?'var(--ok)':'var(--txt3)'));
+        posCells.push(`<td style="font-family:var(--fm);font-size:11px;color:${color}">${esc(val||'—')}</td>`);
+      }
+    }
+    const errHtml=row.validation.errors.map(err=>`<div class="err-item"><div class="err-pos">pos.${err.position+1} · ${esc(err.fieldName)}</div><div class="err-found">Encontrado: <strong>${esc(err.found)}</strong></div></div>`).join('')||'';
+    const corrected=row.validation.corrected;
+    const corrHtml=corrected?`<div class="fix-cell" onclick="copyCorr(event,'corr-${gi}')"><span id="corr-${gi}" class="tx" style="font-size:11px">${esc(corrected)}</span><span class="copy-hint" id="hint-${gi}">copiar</span></div>`:`<span style="color:var(--txt3);font-size:11px">— sin cambios</span>`;
+    const platInfo=row.platform?PLATFORM_MAP[row.platform]:null;
+    const platHtml=platInfo?`<span class="badge" style="border-color:${platInfo.color}40;color:${platInfo.color};background:${platInfo.color}0d">${platInfo.label}</span>`:`<span class="badge b-plat">—</span>`;
+    const tr=document.createElement('tr'); tr.className=row.hasError?'row-err':'row-ok';
+    tr.innerHTML=`<td style="color:var(--txt3);font-family:var(--fm);font-size:11px">${gi+1}</td><td>${platHtml}</td><td class="tx">${taxHtml}</td>${posCells.join('')}<td class="err-wrap">${errHtml}</td><td>${corrHtml}</td><td>${row.hasError?`<span class="badge b-err">⚠ ${row.validation.errors.length}</span>`:`<span class="badge b-ok">✓ OK</span>`}</td>`;
+    tbody.appendChild(tr);
+  });
+  renderPagination(filteredRows.length);
+}
+function applySugg(gi,pos,val){
+  if(!val) return;
+  const row=filteredRows[gi]; const client=getActiveClient();
+  const level=client?.levels.find(l=>l.id===activeResultLevel);
+  const sep=level?.separator||client?.separator||'_';
+  const parts=[...row.validation.parts]; parts[pos]=val.toUpperCase();
+  row.validation.errors=row.validation.errors.filter(e=>e.position!==pos);
+  row.validation.parts=parts;
+  const ep=new Set(row.validation.errors.map(e=>e.position));
+  const cp=parts.map((p,i)=>ep.has(i)?'???'+p.toUpperCase()+'???':p.toUpperCase());
+  row.validation.corrected=ep.size>0?cp.join(sep):null;
+  row.hasError=row.validation.errors.length>0;
+  renderResultTabs(); renderSummary(); renderTable();
+  showToast('✓ Corrección: '+val);
+}
+function copyCorr(event,id){ event.stopPropagation(); const el=document.getElementById(id); if(!el) return; navigator.clipboard.writeText(el.textContent).then(()=>{ const ri=id.replace('corr-',''); const h=document.getElementById('hint-'+ri); if(h){ h.textContent='¡Copiado!'; h.classList.add('copied'); setTimeout(()=>{ h.textContent='copiar'; h.classList.remove('copied'); },2000); } }).catch(()=>showToast('No se pudo copiar','err')); }
+function renderPagination(total){
+  const tp=Math.ceil(total/PAGE_SIZE); const pg=document.getElementById('pagination'); pg.innerHTML=''; if(tp<=1) return;
+  const mk=(lbl,p,active,disabled)=>{ const b=document.createElement('button'); b.className='pg-btn'+(active?' active':''); b.textContent=lbl; b.disabled=disabled; b.onclick=()=>{ currentPage=p; renderTable(); }; return b; };
+  pg.appendChild(mk('«',1,false,currentPage===1)); pg.appendChild(mk('‹',currentPage-1,false,currentPage===1));
+  const lo=Math.max(1,currentPage-2),hi=Math.min(tp,currentPage+2);
+  for(let i=lo;i<=hi;i++) pg.appendChild(mk(i,i,i===currentPage,false));
+  pg.appendChild(mk('›',currentPage+1,false,currentPage===tp)); pg.appendChild(mk('»',tp,false,currentPage===tp));
+}
+const uz=document.getElementById('uploadZone');
+uz.addEventListener('dragover',e=>{ e.preventDefault(); uz.classList.add('drag'); });
+uz.addEventListener('dragleave',()=>uz.classList.remove('drag'));
+uz.addEventListener('drop',e=>{ e.preventDefault(); uz.classList.remove('drag'); if(e.dataTransfer.files.length) loadFile(e.dataTransfer.files[0]); });
+
+// ═══════════════════════════════════════════════════
+//  E1 — MODO REVISIÓN RÁPIDA
+// ═══════════════════════════════════════════════════
+let reviewRows=[];      // todas las filas con error del nivel activo
+let reviewIdx=0;        // índice actual
+let reviewActions={};   // { rowIdx: { errPos: value|'ignore' } }
+
+function enterReviewMode(){
+  if(!validationData||!activeResultLevel) return;
+  const client=getActiveClient();
+  const level=client?.levels.find(l=>l.id===activeResultLevel);
+  // Collect error rows from active level
+  reviewRows=(validationData.levels[activeResultLevel]||[]).filter(r=>r.hasError);
+  if(!reviewRows.length){ showToast('Sin errores en este nivel','ok'); return; }
+  reviewIdx=0;
+  reviewActions={};
+  document.getElementById('reviewOverlay').classList.add('active');
+  renderReviewCard();
+}
+
+function exitReviewMode(){
+  document.getElementById('reviewOverlay').classList.remove('active');
+  // Re-render table to reflect any applied corrections
+  applyFilters();
+  renderResultTabs();
+  const totalErrs=Object.values(validationData.levels).reduce((s,r)=>s+r.filter(x=>x.hasError).length,0);
+  document.getElementById('btnReview').style.display=totalErrs>0?'block':'none';
+}
+
+function reviewNav(dir){
+  const next=reviewIdx+dir;
+  if(next<0) return;
+  if(next>=reviewRows.length){ exitReviewMode(); showToast('✓ Revisión completada','ok'); return; }
+  reviewIdx=next;
+  renderReviewCard();
+}
+
+function renderReviewCard(){
+  const client=getActiveClient();
+  const level=client?.levels.find(l=>l.id===activeResultLevel);
+  const fields=level?.fields||[];
+  const sep=level?.separator||client?.separator||'_';
+  const total=reviewRows.length;
+  const row=reviewRows[reviewIdx];
+
+  // Update header progress
+  document.getElementById('reviewProg').textContent=`Error ${reviewIdx+1} de ${total}`;
+  document.getElementById('reviewFooterInfo').textContent=
+    `${reviewIdx+1} de ${total} taxonomías con error · Nivel: ${esc(level?.name||'')}`;
+
+  // Prev / Next buttons
+  document.getElementById('reviewPrevBtn').disabled=reviewIdx===0;
+  document.getElementById('reviewNextBtn').textContent=
+    reviewIdx===total-1?'Finalizar ✓':'Siguiente →';
+
+  // Build token display
+  const parts=row.validation.parts;
+  const errPos=new Set(row.validation.errors.map(e=>e.position));
+  const taxHtml=parts.map((p,idx)=>{
+    const f=fields[idx];
+    const isFree=f&&(f.free||f.manual);
+    const isErr=errPos.has(idx);
+    const cls=isErr?'tp-err':(isFree?'tp-free':'tp-ok');
+    const sepHtml=idx<parts.length-1?`<span class="tp-sep">${sep}</span>`:'';
+    return `<span class="tp ${cls}">${esc(p)}</span>${sepHtml}`;
+  }).join('');
+
+  // Build error blocks
+  const rowActions=reviewActions[reviewIdx]||{};
+  const errBlocks=row.validation.errors.map((err,ei)=>{
+    if(err.subErrors) return ''; // sub-taxonomy errors shown differently
+    const allKeys=Object.keys(err.validValues||{});
+    const suggs=new Set(err.suggestions||[]);
+    const topK=(err.suggestions||[]).filter(k=>allKeys.includes(k));
+    const restK=allKeys.filter(k=>!suggs.has(k)).sort();
+    const opts=[...topK,...restK].map(k=>
+      `<option value="${esc(k)}">${esc(k)}${err.validValues[k]?' — '+esc(err.validValues[k]):''}</option>`
+    ).join('');
+
+    const currentAction=rowActions[err.position];
+    const isIgnored=currentAction==='ignore';
+    const selectedVal=(!isIgnored&&currentAction)?currentAction:'';
+
+    return `<div class="review-error-block">
+      <div class="review-error-header">
+        <span class="review-error-pos">pos.${err.position+1}</span>
+        <span class="review-error-field">${esc(err.fieldName)}</span>
+        <span class="review-error-found">${esc(err.found)}</span>
+      </div>
+      <div class="review-error-body">
+        <select class="review-select ${selectedVal?'selected':''}"
+          onchange="reviewSetAction(${reviewIdx},${err.position},this.value)">
+          <option value="">— Selecciona el valor correcto —</option>
+          ${opts}
+        </select>
+        <button class="review-ignore-btn ${isIgnored?'ignored':''}"
+          onclick="reviewIgnore(${reviewIdx},${err.position})">
+          ${isIgnored?'✓ Ignorado':'Ignorar'}
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('reviewCard').innerHTML=`
+    <div style="font-family:var(--fm);font-size:10px;color:var(--txt3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">Taxonomía original</div>
+    <div class="review-taxonomy-display tx">${taxHtml}</div>
+    <div style="font-family:var(--fm);font-size:10px;color:var(--err);margin-bottom:10px;text-transform:uppercase;letter-spacing:.08em">${row.validation.errors.length} error${row.validation.errors.length!==1?'es':''} encontrado${row.validation.errors.length!==1?'s':''}</div>
+    <div class="review-errors-list">${errBlocks||'<div style="font-size:12px;color:var(--txt3)">Solo errores de sub-taxonomía — corrígelos en la tabla.</div>'}</div>`;
+}
+
+function reviewSetAction(rowIdx,pos,val){
+  if(!val) return;
+  if(!reviewActions[rowIdx]) reviewActions[rowIdx]={};
+  reviewActions[rowIdx][pos]=val;
+  // Apply to the actual row data
+  applyReviewCorrection(rowIdx,pos,val);
+  // Update button style
+  const select=event?.target;
+  if(select) select.classList.add('selected');
+}
+
+function reviewIgnore(rowIdx,pos){
+  if(!reviewActions[rowIdx]) reviewActions[rowIdx]={};
+  const wasIgnored=reviewActions[rowIdx][pos]==='ignore';
+  reviewActions[rowIdx][pos]=wasIgnored?undefined:'ignore';
+  renderReviewCard();
+}
+
+function applyReviewCorrection(rowIdx,pos,val){
+  const client=getActiveClient();
+  const level=client?.levels.find(l=>l.id===activeResultLevel);
+  const sep=level?.separator||client?.separator||'_';
+  const row=reviewRows[rowIdx];
+  const parts=[...row.validation.parts];
+  parts[pos]=val.toUpperCase();
+  row.validation.errors=row.validation.errors.filter(e=>e.position!==pos);
+  row.validation.parts=parts;
+  const ep=new Set(row.validation.errors.map(e=>e.position));
+  const cp=parts.map((p,i)=>ep.has(i)?'???'+p.toUpperCase()+'???':p.toUpperCase());
+  row.validation.corrected=ep.size>0?cp.join(sep):null;
+  row.hasError=row.validation.errors.length>0;
+}
+
+// ═══════════════════════════════════════════════════
+//  B3 — COMPARACIÓN DE CLIENTES
+// ═══════════════════════════════════════════════════
+function renderCompareView(){
+  const clients = Object.values(DB.clients);
+  const badge   = document.getElementById('compareBadge');
+  const content = document.getElementById('compareContent');
+  if(!content) return;
+
+  if(!clients.length){
+    content.innerHTML=`<div class="empty-state" style="min-height:300px">
+      <div class="empty-icon">⇄</div>
+      <div class="empty-title">Sin clientes</div>
+      <div class="empty-sub">Crea clientes y valida sus taxonomías para ver la comparación.</div>
+    </div>`;
+    return;
+  }
+
+  // Collect all level names across all clients for unified columns
+  const allLevelNames = [...new Set(clients.flatMap(c=>c.levels.map(l=>l.name)))];
+  badge.textContent = clients.length+' cliente'+(clients.length!==1?'s':'');
+
+  // Sort clients: those with sessions first, then by name
+  const sorted = [...clients].sort((a,b)=>{
+    const aHas = !!a.lastSession, bHas = !!b.lastSession;
+    if(aHas && !bHas) return -1;
+    if(!aHas && bHas) return 1;
+    return a.name.localeCompare(b.name);
+  });
+
+  const levelCols = allLevelNames.map(n=>`<th>${esc(n)}</th>`).join('');
+
+  const rows = sorted.map(c=>{
+    const session = c.lastSession;
+    const levelCells = allLevelNames.map(name=>{
+      if(!session) return `<td><span class="no-session-note">Sin validaciones</span></td>`;
+      const lvl = session.levels[name];
+      if(!lvl||lvl.total===0) return `<td><span style="color:var(--txt3);font-size:11px">—</span></td>`;
+      const pct  = lvl.pct;
+      const cls  = pct===100?'ok':pct>=70?'warn':'err';
+      const barColor = pct===100?'var(--ok)':pct>=70?'var(--warn)':'var(--err)';
+      return `<td>
+        <span class="comp-score ${cls}">${pct}%</span>
+        <span class="comp-bar"><span class="comp-bar-fill" style="width:${pct}%;background:${barColor}"></span></span>
+        <span style="font-family:var(--fm);font-size:10px;color:var(--txt3);margin-left:6px">${lvl.total-lvl.errors}/${lvl.total}</span>
+      </td>`;
+    }).join('');
+
+    const sessionInfo = session
+      ? `<div style="font-size:10px;color:var(--txt3);margin-top:2px">${esc(session.date)} · ${esc(session.file)}</div>`
+      : `<div style="font-size:10px;color:var(--txt3);margin-top:2px">Sin sesiones registradas</div>`;
+
+    return `<tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="comp-dot" style="background:${c.color}"></span>
+          <div>
+            <div style="font-size:12px;font-weight:500;color:var(--txt);cursor:pointer" onclick="viewClientDetail('${c.id}')">${esc(c.name)}</div>
+            ${sessionInfo}
+          </div>
+        </div>
+      </td>
+      ${levelCells}
+      <td>
+        <button class="page-btn primary" style="padding:4px 10px;font-size:10px" onclick="selectClientAndValidate(event,'${c.id}')">Validar →</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Overall score per client (avg of levels with data)
+  const note = clients.some(c=>!c.lastSession)
+    ? `<div style="font-size:11px;color:var(--txt3);padding:12px 16px;border-top:1px solid var(--bdr)">
+        Los clientes sin sesiones registradas aparecen al final. Valida sus taxonomías para ver su score.
+      </div>` : '';
+
+  content.innerHTML=`
+    <div class="comparison-wrap">
+      <table class="comparison-table">
+        <thead><tr>
+          <th style="min-width:200px">Cliente</th>
+          ${levelCols}
+          <th style="width:80px"></th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      ${note}
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════
+//  C2 — VALIDACIÓN MANUAL INLINE
+// ═══════════════════════════════════════════════════
+let manualActiveLevelId = null;
+let manualDebounce      = null;
+
+function initManualValidator(){
+  const client = getActiveClient();
+  const el     = document.getElementById('manualValidator');
+  if(!client || !client.levels.length){ el.style.display='none'; return; }
+  el.style.display = 'block';
+  if(!manualActiveLevelId || !client.levels.find(l=>l.id===manualActiveLevelId)){
+    manualActiveLevelId = client.levels[0].id;
+  }
+  _renderManualPills();
+  manualClear();
+}
+
+function _renderManualPills(){
+  const client = getActiveClient(); if(!client) return;
+  document.getElementById('manualLevelPills').innerHTML = client.levels.map(l=>
+    `<button class="manual-level-pill ${l.id===manualActiveLevelId?'active':''}"
+      onclick="manualSetLevel('${l.id}')">${esc(l.name)}</button>`
+  ).join('');
+}
+
+function manualSetLevel(id){
+  manualActiveLevelId = id;
+  _renderManualPills();
+  const raw = document.getElementById('manualInput').value.trim();
+  if(raw) _doManualValidate(); else manualClear();
+}
+
+function manualClear(){
+  document.getElementById('manualInput').value = '';
+  document.getElementById('manualInput').className = 'manual-input';
+  document.getElementById('manualResult').style.display = 'none';
+  document.getElementById('manualCorrectedBar').style.display = 'none';
+}
+
+function manualValidate(){
+  clearTimeout(manualDebounce);
+  manualDebounce = setTimeout(_doManualValidate, 180);
+}
+
+function _doManualValidate(){
+  const raw    = document.getElementById('manualInput').value.trim();
+  const result = document.getElementById('manualResult');
+  const input  = document.getElementById('manualInput');
+  if(!raw){ result.style.display='none'; input.className='manual-input'; return; }
+
+  const client = getActiveClient(); if(!client) return;
+  const level  = client.levels.find(l=>l.id===manualActiveLevelId) || client.levels[0];
+  const fields = level.fields;
+  const sep    = level.separator || client.separator || '_';
+  const v      = validateTaxonomy(raw, fields, sep);
+
+  // Input border state
+  input.className = 'manual-input ' + (v.errors.length ? 'has-errors' : 'is-ok');
+  result.style.display = 'block';
+
+  // ── Build table header (same as renderTable) ──
+  const maxPos = Math.max(v.parts.length, fields.length, 1);
+  const posHdrs = [];
+  for(let p=0;p<maxPos;p++){
+    const f=fields[p];
+    posHdrs.push(`<th>${f?esc(f.name||'pos.'+(p+1)):'Extra '+(p-fields.length+1)}</th>`);
+  }
+  document.getElementById('manualTblHead').innerHTML=`<tr>
+    <th>Taxonomía</th>
+    ${posHdrs.join('')}
+    <th>Errores</th>
+    <th>Taxonomía corregida</th>
+    <th>Estado</th>
+  </tr>`;
+
+  // ── Build single table row ──
+  const parts  = v.parts;
+  const errPos = new Set(v.errors.map(e=>e.position));
+
+  // Tokens
+  const taxHtml = parts.map((p,idx)=>{
+    const f      = fields[idx];
+    const isFree = f&&(f.free||f.manual);
+    const isErr  = errPos.has(idx);
+    const hasSub = f&&f.subTax&&f.subTax.enabled;
+    const subSep = hasSub?f.subTax.separator||'-':null;
+    let inner='';
+    if(hasSub&&subSep){
+      inner=p.split(subSep).map((sp,si,arr)=>
+        `<span class="tp-sub">${esc(sp)}</span>${si<arr.length-1?`<span class="tp-sep-sub">${subSep}</span>`:''}`
+      ).join('');
+    } else { inner=esc(p); }
+    const cls  = isErr?'tp-err':(isFree?'tp-free':'tp-ok');
+    const sepH = idx<parts.length-1?`<span class="tp-sep">${sep}</span>`:'';
+    return `<span class="tp ${cls}" title="${f?'pos.'+(idx+1)+': '+esc(f.name||''):'Extra'}">${inner}</span>${sepH}`;
+  }).join('');
+
+  // Position cells with dropdowns for errors
+  const posCells = [];
+  for(let p=0;p<maxPos;p++){
+    const val   = parts[p]!==undefined?parts[p]:'';
+    const f     = fields[p];
+    const isErr = errPos.has(p);
+    const isFree= f&&(f.free||f.manual);
+    if(isErr&&val){
+      const err    = v.errors.find(e=>e.position===p);
+      const allKeys= Object.keys(err?.validValues||{});
+      const suggs  = new Set(err?.suggestions||[]);
+      const topK   = (err?.suggestions||[]).filter(k=>allKeys.includes(k));
+      const restK  = allKeys.filter(k=>!suggs.has(k)).sort();
+      const opts   = [...topK,...restK].map(k=>
+        `<option value="${esc(k)}">${esc(k)}${err.validValues[k]?' — '+esc(err.validValues[k]):''}</option>`
+      ).join('');
+      posCells.push(`<td style="background:rgba(204,34,0,.04)">
+        <span style="font-family:var(--fm);font-size:10px;color:var(--err);display:block">${esc(val)}</span>
+        <select class="field-select" onchange="manualApplyCorrection(${p},this.value)">
+          <option value="">— corregir —</option>${opts}
+        </select></td>`);
+    } else {
+      const color=isErr?'var(--err)':(isFree?'var(--acc2)':(val?'var(--ok)':'var(--txt3)'));
+      posCells.push(`<td style="font-family:var(--fm);font-size:11px;color:${color}">${esc(val||'—')}</td>`);
+    }
+  }
+
+  // Errors summary cell
+  const errHtml = v.errors.filter(e=>!e.subErrors).map(err=>
+    `<div class="err-item">
+      <div class="err-pos">pos.${err.position+1} · ${esc(err.fieldName)}</div>
+      <div class="err-found">Encontrado: <strong>${esc(err.found)}</strong></div>
+    </div>`
+  ).join('') || '';
+
+  // Corrected cell
+  const corrected = v.corrected;
+  const corrCell  = corrected
+    ? `<div class="fix-cell" onclick="manualCopyCorrection()" title="Click para copiar">
+        <span id="manualCorrVal" class="tx" style="font-size:11px">${esc(corrected)}</span>
+        <span class="copy-hint" id="manualCopyHint">copiar</span>
+      </div>`
+    : `<span style="color:var(--txt3);font-size:11px">— sin cambios</span>`;
+
+  const statusCell = v.errors.length
+    ? `<span class="badge b-err">⚠ ${v.errors.length}</span>`
+    : `<span class="badge b-ok">✓ OK</span>`;
+
+  const tr = document.createElement('tr');
+  tr.className = v.errors.length ? 'row-err' : 'row-ok';
+  tr.innerHTML=`
+    <td class="tx">${taxHtml}</td>
+    ${posCells.join('')}
+    <td class="err-wrap">${errHtml}</td>
+    <td>${corrCell}</td>
+    <td>${statusCell}</td>`;
+
+  document.getElementById('manualTblBody').innerHTML='';
+  document.getElementById('manualTblBody').appendChild(tr);
+  document.getElementById('manualCorrectedBar').style.display='none';
+}
+
+function manualApplyCorrection(pos, val){
+  if(!val) return;
+  const input  = document.getElementById('manualInput');
+  const client = getActiveClient();
+  const level  = client?.levels.find(l=>l.id===manualActiveLevelId) || client?.levels[0];
+  const sep    = level?.separator || client?.separator || '_';
+  const parts  = input.value.trim().split(sep);
+  parts[pos]   = val.toUpperCase();
+  input.value  = parts.join(sep);
+  _doManualValidate();
+}
+
+function manualCopyCorrection(){
+  const el = document.getElementById('manualCorrVal');
+  if(!el) return;
+  navigator.clipboard.writeText(el.textContent)
+    .then(()=>{
+      const h=document.getElementById('manualCopyHint');
+      if(h){ h.textContent='¡Copiado!'; h.classList.add('copied'); setTimeout(()=>{ h.textContent='copiar'; h.classList.remove('copied'); },2000); }
+      showToast('✓ Copiado al portapapeles','ok');
+    })
+    .catch(()=>showToast('No se pudo copiar','err'));
+}
+
+// ═══════════════════════════════════════════════════
+//  M7 — EXPORT ENGINE
+// ═══════════════════════════════════════════════════
+async function downloadTemplate(){
+  const client=getActiveClient(); if(!client){ showToast('Selecciona un cliente','err'); return; }
+  const wb=new ExcelJS.Workbook(); wb.creator='TaxoPlatform';
+  const HDR='FF013334', FG='FFFFFFFF', ALT='FFF7F8FA';
+  for(const level of client.levels){
+    // No frozen panes
+    const ws=wb.addWorksheet(level.name);
+    ws.columns=[{header:'Platform',key:'p',width:14},{header:'Taxonomy_Name',key:'t',width:80}];
+    const hr=ws.getRow(1); hr.height=24;
+    hr.eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:HDR}}; c.font={bold:true,name:'Calibri',size:10,color:{argb:FG}}; c.alignment={horizontal:'center',vertical:'middle'}; c.border={bottom:{style:'medium',color:{argb:'FF999999'}}}; });
+    // Clean example rows: Taxonomia_1, Taxonomia_2, Taxonomia_3
+    const platOpts=client.platforms.length?client.platforms:['META','GOOGLE','TIKTOK'];
+    for(let i=0;i<5;i++){
+      const p=platOpts[i%platOpts.length]?.toUpperCase()||'META';
+      const r=ws.addRow({p, t:'Taxonomia_'+(i+1)});
+      r.height=15;
+      r.getCell(1).fill={type:'pattern',pattern:'solid',fgColor:{argb:i%2===0?'FFFFFFFF':ALT}};
+      r.getCell(1).font={name:'Calibri',size:10};
+      r.getCell(2).fill={type:'pattern',pattern:'solid',fgColor:{argb:i%2===0?'FFFFFFFF':ALT}};
+      r.getCell(2).font={name:'Calibri',size:10,color:{argb:'FF888888'},italic:true};
+    }
+  }
+  const buf=await wb.xlsx.writeBuffer();
+  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='template_'+client.name.replace(/\s+/g,'_')+'_'+new Date().toISOString().slice(0,10)+'.xlsx';
+  a.click(); URL.revokeObjectURL(a.href); showToast('✓ Template descargado');
+}
+
+async function exportResults(){
+  if(!validationData){ showToast('Sin datos','err'); return; }
+  const client=getActiveClient(); if(!client) return;
+  const wb=new ExcelJS.Workbook(); wb.creator='TaxoPlatform';
+  const C={white:'FFFFFFFF',black:'FF000000',hdrBg:'FF013334',hdrFg:'FFFFFFFF',rowAlt:'FFF7F8FA',errBg:'FFFDE8E8',errFg:'FFC0392B',errBold:'FFE53E3E',okBg:'FFECFDF5',okFg:'FF065F46'};
+  const sc=(cell,bg,fg,opts={})=>{ cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:bg}}; cell.font={color:{argb:fg},bold:opts.bold||false,name:opts.mono?'Courier New':'Calibri',size:opts.mono?9:10}; cell.alignment={horizontal:opts.center?'center':'left',vertical:'middle',wrapText:opts.wrap||false}; };
+  const lColors=['FFB3D9FF','FFFFB3D9','FFB3FFD9','FFFFD9B3','FFD9B3FF'];
+  client.levels.forEach((level,li)=>{
+    const rows=validationData.levels[level.id]||[]; if(!rows.length) return;
+    const fields=level.fields; const sep=level.separator||client.separator;
+    const maxPos=Math.max(...rows.map(r=>r.validation.parts.length),fields.length,1);
+    const ws=wb.addWorksheet(level.name,{views:[{state:'frozen',xSplit:4,ySplit:1}]});
+    const fixHdrs=['#','Estado','Plataforma','Taxonomia_Original','Taxonomia_Corregida'];
+    const posHdrs=Array.from({length:maxPos},(_,p)=>fields[p]?fields[p].name||'Campo '+(p+1):'Extra '+(p-fields.length+1));
+    ws.columns=[{width:5},{width:8},{width:12},{width:75},{width:75},...Array(maxPos).fill({width:20})];
+    const hr=ws.addRow([...fixHdrs,...posHdrs]); hr.height=22;
+    hr.eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:lColors[li%lColors.length]}}; c.font={bold:true,name:'Calibri',size:10,color:{argb:'FF000000'}}; c.alignment={horizontal:'center',vertical:'middle',wrapText:true}; c.border={bottom:{style:'medium',color:{argb:'FF888888'}}}; });
+    rows.forEach((row,ri)=>{
+      const parts=row.validation.parts; const errPos=new Set(row.validation.errors.map(e=>e.position));
+      const corrected=row.validation.corrected||row.rawName; const hasErr=row.hasError; const rowBg=ri%2===0?C.white:C.rowAlt;
+      const posCells=Array.from({length:maxPos},(_,p)=>{ const val=parts[p]!==undefined?parts[p]:''; const sugg=row.validation.errors.find(e=>e.position===p)?.suggestions?.[0]||''; return errPos.has(p)&&val?val+(sugg?' → '+sugg:''):val; });
+      const platLabel=row.platform?(PLATFORM_MAP[row.platform]?.label||row.platform):'—';
+      const dr=ws.addRow([ri+1,hasErr?'ERROR':'OK',platLabel,row.rawName,corrected,...posCells]); dr.height=15;
+      sc(dr.getCell(1),rowBg,C.black,{center:true}); sc(dr.getCell(2),hasErr?C.errBg:C.okBg,hasErr?C.errBold:C.okFg,{bold:true,center:true});
+      sc(dr.getCell(3),rowBg,C.black,{center:true}); sc(dr.getCell(4),hasErr?C.errBg:C.white,hasErr?C.errFg:C.black,{mono:true,wrap:true});
+      sc(dr.getCell(5),C.white,C.black,{mono:true,wrap:true});
+      for(let p=0;p<maxPos;p++){ const isErr=errPos.has(p); sc(dr.getCell(6+p),isErr?C.errBg:rowBg,isErr?C.errFg:C.black,{mono:true,center:true,bold:isErr}); }
+    });
+  });
+  const ws2=wb.addWorksheet('Resumen'); ws2.columns=[{width:30},{width:24}];
+  const ar=(l,v,h=false)=>{ const r=ws2.addRow([l,v]); if(h) r.eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF013334'}}; c.font={bold:true,name:'Calibri',size:10,color:{argb:'FFFFFFFF'}}; }); };
+  ar('RESUMEN','',true); ar('Cliente',client.name); ar('Archivo',validationData.fileName); ar('Fecha',new Date().toLocaleDateString('es-MX'));
+  client.levels.forEach(l=>{ const r=validationData.levels[l.id]||[]; const e=r.filter(x=>x.hasError).length; ar(l.name,`${e}/${r.length} errores (${r.length>0?Math.round(e/r.length*100):0}%)`); });
+  const buf=await wb.xlsx.writeBuffer();
+  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='taxo_qa_'+client.name.replace(/\s+/g,'_')+'_'+new Date().toISOString().slice(0,10)+'.xlsx';
+  a.click(); URL.revokeObjectURL(a.href); showToast('✓ Exportado');
+}
+
+// ═══════════════════════════════════════════════════
+//  AUTH & ROLES
+// ═══════════════════════════════════════════════════
+const CFG_KEY  = 'taxoplatform_cfg_v1';
+const SESS_KEY = 'taxoplatform_session_v1';
+
+let currentRole = null; // 'admin' | 'operator'
+let loginMode   = 'admin';
+
+function loadCfg(){ try{ const r=localStorage.getItem(CFG_KEY); return r?JSON.parse(r):null; }catch(e){ return null; } }
+function saveCfg(cfg){ localStorage.setItem(CFG_KEY,JSON.stringify(cfg)); }
+function loadSession(){ try{ const r=sessionStorage.getItem(SESS_KEY); return r?JSON.parse(r):null; }catch(e){ return null; } }
+function saveSession(s){ sessionStorage.setItem(SESS_KEY,JSON.stringify(s)); }
+function clearSession(){ sessionStorage.removeItem(SESS_KEY); }
+
+function loginSwitchMode(mode){
+  loginMode = mode;
+  document.getElementById('tabAdmin').classList.toggle('active', mode==='admin');
+  document.getElementById('tabOperator').classList.toggle('active', mode==='operator');
+  document.getElementById('loginTitle').textContent = mode==='admin' ? 'Acceso Admin' : 'Acceso Operador';
+  document.getElementById('loginSub').textContent = mode==='admin'
+    ? 'Ingresa tu código de administrador para acceder a la configuración completa.'
+    : 'Ingresa el código que tu Admin te compartió para comenzar a validar.';
+  document.getElementById('loginErr').textContent='';
+  document.getElementById('loginCodeInput').value='';
+}
+
+function loginSubmit(){
+  const cfg = loadCfg();
+  if(!cfg){ document.getElementById('loginErr').textContent='Primero configura la plataforma →'; return; }
+  const code = document.getElementById('loginCodeInput').value.trim();
+  if(!code){ document.getElementById('loginErr').textContent='Ingresa el código'; return; }
+  const btn = document.getElementById('loginBtn');
+  btn.disabled=true; btn.textContent='Verificando...';
+
+  if(loginMode==='admin' && code===cfg.adminCode){
+    saveSession({role:'admin', ts:Date.now()});
+    enterApp('admin', cfg);
+  } else if(loginMode==='operator' && code===cfg.operatorCode){
+    saveSession({role:'operator', ts:Date.now()});
+    enterApp('operator', cfg);
+  } else {
+    document.getElementById('loginErr').textContent='Código incorrecto';
+    btn.disabled=false; btn.textContent='Entrar';
+  }
+}
+
+async function enterApp(role, cfg){
+  currentRole = role;
+  document.getElementById('loginScreen').style.display='none';
+
+  // Role badge
+  const badge = document.getElementById('hdrRoleBadge');
+  badge.textContent = role==='admin' ? 'Admin' : 'Operador';
+  badge.className = 'hdr-role-badge'+(role==='admin'?' admin':'');
+  badge.style.display='block';
+
+  // Hide admin-only elements for operators
+  if(role==='operator') applyOperatorRestrictions();
+
+  // Sync from Google Sheets
+  document.getElementById('syncIndicator').style.display='flex';
+  await syncFromSheets(cfg);
+
+  // Init app
+  updateHeaderClient();
+  renderClientSidebar();
+  Object.keys(DB.clients).length>0 ? nav('clients') : nav(role==='admin'?'welcome':'validate');
+}
+
+function applyOperatorRestrictions(){
+  // Hide these elements once DOM is ready
+  const hideSelectors=[
+    '#nav-clients + * button.page-btn.primary', // new client btn
+    '.client-icon-btn',                          // edit/delete on client items
+  ];
+  // We apply restrictions reactively in render functions instead
+}
+
+function isAdmin(){ return currentRole==='admin'; }
+function isOperator(){ return currentRole==='operator'; }
+
+function logout(){
+  clearSession();
+  currentRole=null;
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('loginCard').style.display='block';
+  document.getElementById('setupCard').style.display='none';
+  document.getElementById('loginCodeInput').value='';
+  document.getElementById('loginErr').textContent='';
+  document.getElementById('loginBtn').disabled=false;
+  document.getElementById('loginBtn').textContent='Entrar';
+  document.getElementById('hdrRoleBadge').style.display='none';
+  document.getElementById('syncIndicator').style.display='none';
+  loginSwitchMode('admin');
+}
+
+function showSetupScreen(){
+  document.getElementById('loginCard').style.display='none';
+  document.getElementById('setupCard').style.display='block';
+  const cfg=loadCfg();
+  if(cfg){
+    if(cfg.sheetId) document.getElementById('setupSheetId').value=cfg.sheetId;
+    if(cfg.clientId) document.getElementById('setupClientId').value=cfg.clientId;
+    if(cfg.adminCode) document.getElementById('setupAdminCode').value=cfg.adminCode;
+    if(cfg.operatorCode) document.getElementById('setupOperatorCode').value=cfg.operatorCode;
+  }
+}
+function hideSetupScreen(){
+  document.getElementById('setupCard').style.display='none';
+  document.getElementById('loginCard').style.display='block';
+}
+
+function saveSetup(){
+  const sheetId   = document.getElementById('setupSheetId').value.trim();
+  const clientId  = document.getElementById('setupClientId').value.trim();
+  const adminCode = document.getElementById('setupAdminCode').value.trim();
+  const opCode    = document.getElementById('setupOperatorCode').value.trim();
+  const errEl     = document.getElementById('setupErr');
+  if(!sheetId||!clientId||!adminCode||!opCode){
+    errEl.textContent='Todos los campos son obligatorios'; return;
+  }
+  if(adminCode===opCode){
+    errEl.textContent='El código Admin y Operador deben ser distintos'; return;
+  }
+  saveCfg({sheetId,clientId,adminCode,operatorCode:opCode});
+  errEl.textContent='';
+  hideSetupScreen();
+  showToast('✓ Configuración guardada','ok');
+}
+
+// ═══════════════════════════════════════════════════
+//  GOOGLE SHEETS SYNC
+// ═══════════════════════════════════════════════════
+const GAPI_DISCOVERY = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
+const SHEET_NAME_DATA = 'taxoplatform_data';
+let gapiReady = false;
+let sheetsToken = null;
+
+function setSyncStatus(state, label){
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncLabel');
+  if(dot){ dot.className='sync-dot '+(state==='ok'?'ok':state==='err'?'err':'loading'); }
+  if(lbl) lbl.textContent = label;
+}
+
+async function syncFromSheets(cfg){
+  setSyncStatus('loading','Sincronizando...');
+  try{
+    await loadGapi(cfg.clientId);
+    const token = await getGoogleToken(cfg.clientId);
+    sheetsToken = token;
+    const data = await readSheet(cfg.sheetId, token);
+    if(data){
+      // Merge sheets data into DB — sheets is source of truth for clients
+      const parsed = JSON.parse(data);
+      if(parsed && parsed.clients){
+        DB.clients = parsed.clients;
+        // Keep local activeClientId if still valid
+        if(DB.activeClientId && !DB.clients[DB.activeClientId]) DB.activeClientId=null;
+        storageSave(DB);
+      }
+    }
+    setSyncStatus('ok','Sincronizado');
+    renderAll();
+  }catch(e){
+    setSyncStatus('err','Sin conexión');
+    showToast('Sin conexión a Google Sheets — usando datos locales','err');
+    console.warn('Sheets sync error:',e);
+  }
+}
+
+async function writeToSheets(){
+  const cfg = loadCfg(); if(!cfg||!sheetsToken) return;
+  try{
+    const payload = JSON.stringify({clients:DB.clients, updatedAt:new Date().toISOString()});
+    await writeSheet(cfg.sheetId, sheetsToken, payload);
+    setSyncStatus('ok','Guardado en Sheets');
+  }catch(e){
+    setSyncStatus('err','Error al guardar');
+    console.warn('Sheets write error:',e);
+  }
+}
+
+// Load GAPI script dynamically
+function loadGapi(clientId){
+  return new Promise((resolve, reject)=>{
+    if(gapiReady){ resolve(); return; }
+    if(document.getElementById('gapi-script')){
+      // Already loading — wait
+      let tries=0;
+      const interval=setInterval(()=>{
+        if(gapiReady){ clearInterval(interval); resolve(); }
+        if(++tries>30){ clearInterval(interval); reject(new Error('GAPI timeout')); }
+      },200);
+      return;
+    }
+    const s=document.createElement('script');
+    s.id='gapi-script'; s.src='https://accounts.google.com/gsi/client';
+    s.onload=()=>{ gapiReady=true; resolve(); };
+    s.onerror=()=>reject(new Error('GAPI load failed'));
+    document.head.appendChild(s);
+  });
+}
+
+// Get OAuth token via Google Identity Services (popup)
+function getGoogleToken(clientId){
+  return new Promise((resolve, reject)=>{
+    if(!window.google){ reject(new Error('Google Identity not loaded')); return; }
+    const client = window.google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: 'https://www.googleapis.com/auth/spreadsheets',
+      callback:(resp)=>{
+        if(resp.error){ reject(new Error(resp.error)); return; }
+        resolve(resp.access_token);
+      }
+    });
+    client.requestAccessToken({prompt:''});
+  });
+}
+
+// Read cell A1 from SHEET_NAME_DATA tab
+async function readSheet(sheetId, token){
+  const range = encodeURIComponent(SHEET_NAME_DATA+'!A1');
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}`;
+  const resp = await fetch(url,{headers:{Authorization:'Bearer '+token}});
+  if(!resp.ok){ if(resp.status===404) return null; throw new Error('Read failed: '+resp.status); }
+  const json = await resp.json();
+  return json.values?.[0]?.[0] || null;
+}
+
+// Write data to A1 of SHEET_NAME_DATA tab (creates tab if needed)
+async function writeSheet(sheetId, token, data){
+  // First ensure the sheet/tab exists
+  await ensureSheetTab(sheetId, token);
+  const range = encodeURIComponent(SHEET_NAME_DATA+'!A1');
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?valueInputOption=RAW`;
+  const resp = await fetch(url,{
+    method:'PUT',
+    headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+    body:JSON.stringify({values:[[data]]})
+  });
+  if(!resp.ok) throw new Error('Write failed: '+resp.status);
+}
+
+async function ensureSheetTab(sheetId, token){
+  // Get existing sheets
+  const metaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?fields=sheets.properties.title`;
+  const metaResp = await fetch(metaUrl,{headers:{Authorization:'Bearer '+token}});
+  if(!metaResp.ok) return;
+  const meta = await metaResp.json();
+  const exists = (meta.sheets||[]).some(s=>s.properties?.title===SHEET_NAME_DATA);
+  if(exists) return;
+  // Create tab
+  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}:batchUpdate`,{
+    method:'POST',
+    headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+    body:JSON.stringify({requests:[{addSheet:{properties:{title:SHEET_NAME_DATA}}}]})
+  });
+}
+
+// ═══════════════════════════════════════════════════
+//  OVERRIDE saveClientToDB TO ALSO WRITE TO SHEETS
+// ═══════════════════════════════════════════════════
+const _origSaveClientToDB = saveClientToDB;
+// We redefine saveClientToDB to also push to Sheets when admin
+// (the original is already defined above, we override here)
+
+// ═══════════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════════
+function esc(str){ if(str===undefined||str===null) return ''; return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function showProgress(msg){ document.getElementById('progressBar').classList.add('show'); document.getElementById('progressLabel').classList.add('show'); document.getElementById('progressLabel').textContent=msg; document.getElementById('progressFill').style.width='40%'; }
+function hideProgress(){ document.getElementById('progressBar').classList.remove('show'); document.getElementById('progressLabel').classList.remove('show'); document.getElementById('progressFill').style.width='0'; }
+function showToast(msg,type){ const t=document.getElementById('toast'); t.textContent=msg; t.className='toast'+(type==='err'?' err':(type==='ok'?' ok':''))+' show'; setTimeout(()=>t.classList.remove('show'),3200); }
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('open'); }));
+
+// ═══════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════
+(function init(){
+  // Check for existing session
+  const session = loadSession();
+  const cfg     = loadCfg();
+  if(session && cfg && (Date.now()-session.ts < 8*60*60*1000)){
+    // Session valid (8h) — enter directly
+    enterApp(session.role, cfg);
+  } else {
+    // Show login screen
+    document.getElementById('loginScreen').style.display='flex';
+  }
+})();
+</script>
+</body>
+</html>
