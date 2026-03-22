@@ -3190,7 +3190,13 @@ function sessSave(s){ sessionStorage.setItem(SESS_KEY,JSON.stringify(s)); }
 function sessClear(){ sessionStorage.removeItem(SESS_KEY); }
 
 // ── Login screen ──
-function showSetup(){ document.getElementById('loginCard').style.display='none'; document.getElementById('setupCard').style.display='block'; }
+function showSetup(){
+  document.getElementById('loginCard').style.display='none';
+  document.getElementById('setupCard').style.display='block';
+  const cfg=cfgLoad()||PRECFG;
+  if(cfg.sheetId)   document.getElementById('cfgSheetId').value   = cfg.sheetId;
+  if(cfg.scriptUrl) document.getElementById('cfgScriptUrl').value = cfg.scriptUrl;
+}
 function hideSetup(){ document.getElementById('setupCard').style.display='none'; document.getElementById('loginCard').style.display='block'; }
 
 async function authSetup(){
@@ -3467,7 +3473,15 @@ document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click
 // ═══════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════
+// Pre-configured credentials
+const PRECFG = {
+  sheetId:   '1s_abLpa3WCS6UWK4XO3W5gVdK7uaAq7xMaZo8zl3uJE',
+  scriptUrl: 'https://script.google.com/macros/s/AKfycbwtzHYlwQnio1p3EljeGaaJKf3-BbDvvU-f597rUen24prWkuG8pYwzJTxGNgIV0k51vg/exec'
+};
+
 (function init(){
+  // Auto-save preconfigured credentials if not already set
+  if(!cfgLoad()) cfgSave(PRECFG);
   // Try to restore session (valid 8h)
   const sess=sessLoad();
   const cfg=cfgLoad();
@@ -3476,8 +3490,6 @@ document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click
   } else {
     document.getElementById('loginScreen').classList.add('visible');
   }
-  // Apply can() to page-level buttons once roles are set
-  // (done inside enterApp after SESSION is set)
 })();
 </script>
 </body>
