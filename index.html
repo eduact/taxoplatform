@@ -772,20 +772,14 @@ body{background:var(--s1);color:var(--txt);font-family:var(--fn);font-size:14px;
       </div>
     </div>
 
-    <div class="setup-grid">
-      <div>
-        <label class="login-label">Sheet ID <span style="color:var(--err)">*</span></label>
-        <input type="text" class="login-input" id="cfgSheetId" placeholder="1BxiMVs0XRA5...">
-      </div>
-      <div>
-        <label class="login-label">API Key <span style="color:var(--err)">*</span></label>
-        <input type="text" class="login-input" id="cfgApiKey" placeholder="AIzaSy...">
-      </div>
+    <div style="margin-bottom:16px">
+      <label class="login-label">Google Sheet ID <span style="color:var(--err)">*</span></label>
+      <input type="text" class="login-input" id="cfgSheetId" placeholder="1BxiMVs0XRA5...">
     </div>
     <div style="margin-bottom:16px">
-      <label class="login-label">Apps Script URL (para escritura)</label>
+      <label class="login-label">Apps Script URL <span style="color:var(--err)">*</span></label>
       <input type="text" class="login-input" id="cfgScriptUrl" placeholder="https://script.google.com/macros/s/.../exec">
-      <div style="font-size:10px;color:var(--txt3);margin-top:3px">Sin esta URL la app funciona en modo lectura local. Puedes agregarla después.</div>
+      <div style="font-size:10px;color:var(--txt3);margin-top:3px">Toda la comunicación con el Sheet pasa por aquí — lectura y escritura.</div>
     </div>
 
     <!-- Master credentials -->
@@ -3201,17 +3195,16 @@ function hideSetup(){ document.getElementById('setupCard').style.display='none';
 
 async function authSetup(){
   const sheetId    = document.getElementById('cfgSheetId').value.trim();
-  const apiKey     = document.getElementById('cfgApiKey').value.trim();
   const scriptUrl  = document.getElementById('cfgScriptUrl').value.trim();
   const masterUser = document.getElementById('cfgMasterUser').value.trim().toLowerCase();
   const masterPass = document.getElementById('cfgMasterPass').value;
   const err = document.getElementById('setupErr');
-  if(!sheetId||!apiKey||!masterUser||!masterPass){ err.textContent='Sheet ID, API Key, usuario y contraseña son obligatorios'; return; }
+  if(!sheetId||!scriptUrl||!masterUser||!masterPass){ err.textContent='Todos los campos son obligatorios'; return; }
   const btn = document.querySelector('#setupCard .login-btn');
   btn.disabled=true; btn.textContent='Configurando...';
   try{
     const hash = await hashPwd(masterPass);
-    const cfg  = {sheetId, apiKey, scriptUrl};
+    const cfg  = {sheetId, scriptUrl};
     cfgSave(cfg);
     const masterUser_ = {username:masterUser, hash, role:ROLE.MASTER, active:'Y'};
     await sheetsWriteUsers(cfg,[masterUser_]);
@@ -3219,7 +3212,9 @@ async function authSetup(){
     USERS=[masterUser_];
     err.textContent='';
     hideSetup();
-    await enterApp({username:masterUser, role:ROLE.MASTER, ts:Date.now()});
+    const sess={username:masterUser, role:ROLE.MASTER, ts:Date.now()};
+    sessSave(sess);
+    await enterApp(sess);
   }catch(e){ err.textContent='Error: '+e.message; }
   finally{ btn.disabled=false; btn.textContent='Guardar e iniciar sesión'; }
 }
@@ -3307,49 +3302,49 @@ function setSyncStatus(state,label){
 
 // ═══════════════════════════════════════════════════
 //  GOOGLE SHEETS LAYER
+//  Todo pasa por Apps Script via GET — resuelve CORS
 // ═══════════════════════════════════════════════════
 const TAB_DATA  = 'txp_data';
 const TAB_USERS = 'txp_users';
-const SH_BASE   = 'https://sheets.googleapis.com/v4/spreadsheets';
 
-async function sheetsFetchCell(cfg,tab){
-  const r=encodeURIComponent(tab+'!A1');
-  const resp=await fetch(`${SH_BASE}/${cfg.sheetId}/values/${r}?key=${cfg.apiKey}`);
-  if(!resp.ok) throw new Error('Read '+resp.status);
-  const j=await resp.json(); return j.values?.[0]?.[0]||null;
+// Encode payload as base64 for GET transport
+function b64enc(str){ return btoa(unescape(encodeURIComponent(str))); }
+function b64dec(str){ return decodeURIComponent(escape(atob(str))); }
+
+// All calls go through the Apps Script URL as GET
+async function scriptCall(cfg, params){
+  if(!cfg.scriptUrl) throw new Error('Sin Apps Script URL configurada');
+  const qs = Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
+  const url = cfg.scriptUrl + '?' + qs;
+  const resp = await fetch(url, {redirect:'follow'});
+  if(!resp.ok) throw new Error('Script error '+resp.status);
+  const text = await resp.text();
+  try{ return JSON.parse(text); }catch(e){ return {ok:true}; }
 }
-async function sheetsFetchData(cfg){ return sheetsFetchCell(cfg,TAB_DATA); }
+
+async function sheetsFetchData(cfg){
+  const r = await scriptCall(cfg,{action:'read',sheetId:cfg.sheetId,tab:TAB_DATA,cell:'A1'});
+  return r.value||null;
+}
+
 async function sheetsFetchUsers(cfg){
-  const r=encodeURIComponent(TAB_USERS+'!A:D');
-  const resp=await fetch(`${SH_BASE}/${cfg.sheetId}/values/${r}?key=${cfg.apiKey}`);
-  if(!resp.ok){ if(resp.status===400||resp.status===404) return []; throw new Error('Users '+resp.status); }
-  const j=await resp.json(); const rows=j.values||[];
+  const r = await scriptCall(cfg,{action:'readRange',sheetId:cfg.sheetId,tab:TAB_USERS,range:'A:D'});
+  const rows = r.values||[];
   if(rows.length<2) return [];
-  return rows.slice(1).map(r=>({username:(r[0]||'').toLowerCase(),hash:r[1]||'',role:r[2]||ROLE.OPERATOR,active:r[3]||'Y'})).filter(u=>u.username);
+  return rows.slice(1)
+    .map(r=>({username:(r[0]||'').toLowerCase(),hash:r[1]||'',role:r[2]||ROLE.OPERATOR,active:r[3]||'Y'}))
+    .filter(u=>u.username);
 }
 
-// Write via Apps Script proxy (needed for write from browser)
-async function sheetsPost(cfg,body){
-  if(!cfg.scriptUrl){ console.warn('No Apps Script URL — local only'); return; }
-  const resp=await fetch(cfg.scriptUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  if(!resp.ok) throw new Error('Write '+resp.status);
-}
-async function sheetsWriteData(cfg,value){ await sheetsPost(cfg,{sheetId:cfg.sheetId,tab:TAB_DATA,value}); }
-async function sheetsWriteUsers(cfg,users){
-  const rows=[['username','hash','role','active'],...users.map(u=>[u.username,u.hash,u.role,u.active])];
-  await sheetsPost(cfg,{sheetId:cfg.sheetId,tab:TAB_USERS,rows});
-  USERS=users;
+async function sheetsWriteData(cfg, value){
+  await scriptCall(cfg,{action:'write',sheetId:cfg.sheetId,tab:TAB_DATA,cell:'A1',value:b64enc(value)});
 }
 
-// ─── Apps Script code (paste in Sheet → Extensions → Apps Script) ───
-// function doPost(e){
-//   const d=JSON.parse(e.postData.contents);
-//   const ss=SpreadsheetApp.openById(d.sheetId);
-//   let sh=ss.getSheetByName(d.tab)||ss.insertSheet(d.tab);
-//   if(d.rows){ sh.clearContents(); sh.getRange(1,1,d.rows.length,d.rows[0].length).setValues(d.rows); }
-//   else { sh.getRange('A1').setValue(d.value); }
-//   return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);
-// }
+async function sheetsWriteUsers(cfg, users){
+  const rows = [['username','hash','role','active'],...users.map(u=>[u.username,u.hash,u.role,u.active])];
+  await scriptCall(cfg,{action:'writeRows',sheetId:cfg.sheetId,tab:TAB_USERS,data:b64enc(JSON.stringify(rows))});
+  USERS = users;
+}
 
 // ═══════════════════════════════════════════════════
 //  USERS VIEW
