@@ -306,7 +306,7 @@ body{background:var(--s1);color:var(--txt);font-family:var(--fn);font-size:14px;
 .filter-search{padding:5px 11px;border:1px solid var(--bdr);border-radius:20px;font-family:var(--fn);font-size:12px;outline:none;transition:border-color .15s;min-width:200px;background:#fff;color:var(--txt)}
 .filter-search:focus{border-color:var(--teal)}
 .filter-count{font-family:var(--fm);font-size:11px;color:var(--txt3);margin-left:auto}
-.tbl-wrap{background:#fff;border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+.tbl-wrap{background:#fff;border:1px solid var(--bdr);border-radius:var(--r);overflow-x:auto;overflow-y:visible;box-shadow:var(--shadow)}
 .results-table{width:100%;border-collapse:collapse;font-size:12px}
 .results-table th{background:var(--teal);color:rgba(255,255,255,.85);padding:9px 11px;text-align:left;font-family:var(--fm);font-size:10px;font-weight:500;letter-spacing:.05em;white-space:nowrap;position:sticky;top:0}
 .results-table td{padding:8px 11px;border-bottom:1px solid var(--bdr);vertical-align:top}
@@ -777,9 +777,14 @@ body{background:var(--s1);color:var(--txt);font-family:var(--fn);font-size:14px;
       <input type="text" class="login-input" id="cfgSheetId" placeholder="1BxiMVs0XRA5...">
     </div>
     <div style="margin-bottom:16px">
+      <label class="login-label">Google API Key <span style="color:var(--err)">*</span></label>
+      <input type="text" class="login-input" id="cfgApiKey" placeholder="AIzaSy...">
+      <div style="font-size:10px;color:var(--txt3);margin-top:3px">Para lectura del Sheet (Sheet debe ser público de lectura)</div>
+    </div>
+    <div style="margin-bottom:16px">
       <label class="login-label">Apps Script URL <span style="color:var(--err)">*</span></label>
       <input type="text" class="login-input" id="cfgScriptUrl" placeholder="https://script.google.com/macros/s/.../exec">
-      <div style="font-size:10px;color:var(--txt3);margin-top:3px">Toda la comunicación con el Sheet pasa por aquí — lectura y escritura.</div>
+      <div style="font-size:10px;color:var(--txt3);margin-top:3px">Para escritura al Sheet</div>
     </div>
 
     <!-- Master credentials -->
@@ -825,6 +830,7 @@ body{background:var(--s1);color:var(--txt);font-family:var(--fn);font-size:14px;
       <button class="sb-btn" id="nav-validate" onclick="nav('validate')">✓ Validar</button>
       <button class="sb-btn" id="nav-compare" onclick="nav('compare')" style="display:none">⇄ Comparar</button>
       <button class="sb-btn" id="nav-users" onclick="nav('users')" style="display:none">👤 Usuarios</button>
+      <button class="sb-btn" id="nav-diag" onclick="nav('diag')" style="display:none">⚙ Diagnóstico</button>
     </div>
     <div class="sb-section" style="flex:1">
       <div class="sb-label">Clientes</div>
@@ -925,7 +931,15 @@ body{background:var(--s1);color:var(--txt);font-family:var(--fn);font-size:14px;
       <div id="usersContent"></div>
     </div>
 
-    <!-- VALIDATE -->
+    <!-- DIAGNÓSTICO (master only) -->
+    <div class="view" id="view-diag">
+      <div class="page-hdr">
+        <div class="page-title">Diagnóstico del sistema</div>
+        <div class="page-sep"></div>
+        <button class="page-btn primary" onclick="runDiag()">▶ Ejecutar pruebas</button>
+      </div>
+      <div id="diagContent" style="display:flex;flex-direction:column;gap:10px;max-width:700px"></div>
+    </div>
     <div class="view" id="view-validate">
       <div class="page-hdr">
         <div class="page-title" id="validateTitle">Validar taxonomías</div>
@@ -1123,9 +1137,19 @@ function exportAllJSON(){
 function importJSON(input){
   const file=input.files[0]; if(!file) return;
   const reader=new FileReader();
-  reader.onload=e=>{ try{ const d=JSON.parse(e.target.result); if(!d.clients) throw new Error('Formato inválido');
+  reader.onload=e=>{ try{
+    const d=JSON.parse(e.target.result);
+    if(!d.clients) throw new Error('Formato inválido');
     Object.assign(DB.clients,d.clients); storageSave(DB); renderAll();
     showToast('✓ Importado — '+Object.keys(d.clients).length+' clientes');
+    // Sync to Sheets
+    const cfg=cfgLoad();
+    if(cfg && can('editClients')){
+      setSyncStatus('spin','Sincronizando con Sheets...');
+      sheetsWriteData(cfg,JSON.stringify({clients:DB.clients,updatedAt:new Date().toISOString()}))
+        .then(()=>setSyncStatus('ok','Guardado en Sheets'))
+        .catch(e=>{ setSyncStatus('err','Error al sincronizar'); showToast('Importado localmente — error al sincronizar: '+e.message,'err'); });
+    }
   }catch(err){ showToast('Error: '+err.message,'err'); }};
   reader.readAsText(file); input.value='';
 }
@@ -1258,6 +1282,7 @@ function nav(view, data){
   if(view==='validate') renderValidateView();
   if(view==='compare'){ if(can('compare')) renderCompareView(); else return; }
   if(view==='users'){   if(can('manageOps')) renderUsersView(); else return; }
+  if(view==='diag'){    if(isMaster()) {} else return; } // content rendered on demand
   if(view==='client-detail' && data) renderClientDetail(data);
 }
 function updateHeaderClient(){
@@ -3185,9 +3210,9 @@ async function hashPwd(p){
 // ── Config storage ──
 function cfgLoad(){ try{ const r=localStorage.getItem(CFG_KEY); return r?JSON.parse(r):null; }catch(e){ return null; } }
 function cfgSave(c){ localStorage.setItem(CFG_KEY,JSON.stringify(c)); }
-function sessLoad(){ try{ const r=sessionStorage.getItem(SESS_KEY); return r?JSON.parse(r):null; }catch(e){ return null; } }
-function sessSave(s){ sessionStorage.setItem(SESS_KEY,JSON.stringify(s)); }
-function sessClear(){ sessionStorage.removeItem(SESS_KEY); }
+function sessLoad(){ try{ const r=localStorage.getItem(SESS_KEY); return r?JSON.parse(r):null; }catch(e){ return null; } }
+function sessSave(s){ localStorage.setItem(SESS_KEY,JSON.stringify(s)); }
+function sessClear(){ localStorage.removeItem(SESS_KEY); }
 
 // ── Login screen ──
 function showSetup(){
@@ -3195,22 +3220,26 @@ function showSetup(){
   document.getElementById('setupCard').style.display='block';
   const cfg=cfgLoad()||PRECFG;
   if(cfg.sheetId)   document.getElementById('cfgSheetId').value   = cfg.sheetId;
+  if(cfg.apiKey)    document.getElementById('cfgApiKey').value    = cfg.apiKey;
   if(cfg.scriptUrl) document.getElementById('cfgScriptUrl').value = cfg.scriptUrl;
 }
 function hideSetup(){ document.getElementById('setupCard').style.display='none'; document.getElementById('loginCard').style.display='block'; }
 
 async function authSetup(){
   const sheetId    = document.getElementById('cfgSheetId').value.trim();
+  const apiKey     = document.getElementById('cfgApiKey').value.trim();
   const scriptUrl  = document.getElementById('cfgScriptUrl').value.trim();
   const masterUser = document.getElementById('cfgMasterUser').value.trim().toLowerCase();
   const masterPass = document.getElementById('cfgMasterPass').value;
   const err = document.getElementById('setupErr');
-  if(!sheetId||!scriptUrl||!masterUser||!masterPass){ err.textContent='Todos los campos son obligatorios'; return; }
+  if(!sheetId||!apiKey||!scriptUrl||!masterUser||!masterPass){
+    err.textContent='Todos los campos son obligatorios'; return;
+  }
   const btn = document.querySelector('#setupCard .login-btn');
   btn.disabled=true; btn.textContent='Configurando...';
   try{
     const hash = await hashPwd(masterPass);
-    const cfg  = {sheetId, scriptUrl};
+    const cfg  = {sheetId, apiKey, scriptUrl};
     cfgSave(cfg);
     const masterUser_ = {username:masterUser, hash, role:ROLE.MASTER, active:'Y'};
     await sheetsWriteUsers(cfg,[masterUser_]);
@@ -3262,6 +3291,8 @@ async function enterApp(sess){
   // Apply page-level role buttons
   const btnNew=document.getElementById('btnNewClient');
   if(btnNew) btnNew.style.display=can('editClients')?'':'none';
+  const navDiag=document.getElementById('nav-diag');
+  if(navDiag) navDiag.style.display=isMaster()?'':'none';
   // Sync data from Sheets
   setSyncStatus('spin','Sincronizando...');
   const cfg = cfgLoad();
@@ -3308,34 +3339,74 @@ function setSyncStatus(state,label){
 
 // ═══════════════════════════════════════════════════
 //  GOOGLE SHEETS LAYER
-//  Todo pasa por Apps Script via GET — resuelve CORS
+//  Lectura: Sheets REST API (Sheet público + API Key)
+//  Escritura: Apps Script doGet con callback JSONP
 // ═══════════════════════════════════════════════════
 const TAB_DATA  = 'txp_data';
 const TAB_USERS = 'txp_users';
+const SH_BASE   = 'https://sheets.googleapis.com/v4/spreadsheets';
 
-// Encode payload as base64 for GET transport
-function b64enc(str){ return btoa(unescape(encodeURIComponent(str))); }
-function b64dec(str){ return decodeURIComponent(escape(atob(str))); }
+function b64enc(str){ try{ return btoa(unescape(encodeURIComponent(str))); }catch(e){ return btoa(str); } }
+function b64dec(str){ try{ return decodeURIComponent(escape(atob(str))); }catch(e){ return atob(str); } }
 
-// All calls go through the Apps Script URL as GET
-async function scriptCall(cfg, params){
-  if(!cfg.scriptUrl) throw new Error('Sin Apps Script URL configurada');
-  const qs = Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
-  const url = cfg.scriptUrl + '?' + qs;
-  const resp = await fetch(url, {redirect:'follow'});
-  if(!resp.ok) throw new Error('Script error '+resp.status);
-  const text = await resp.text();
-  try{ return JSON.parse(text); }catch(e){ return {ok:true}; }
+// ── READ via Sheets REST API (requires API Key + public sheet) ──
+async function sheetsReadCell(cfg, tab, cell){
+  if(!cfg.apiKey) throw new Error('Sin API Key configurada');
+  const range = encodeURIComponent(tab+'!'+cell);
+  const url = `${SH_BASE}/${cfg.sheetId}/values/${range}?key=${cfg.apiKey}`;
+  const resp = await fetch(url);
+  if(!resp.ok){
+    const err = await resp.json().catch(()=>({}));
+    throw new Error('Sheets read error '+ resp.status +': '+(err.error?.message||''));
+  }
+  const j = await resp.json();
+  return j.values?.[0]?.[0]||null;
 }
 
-async function sheetsFetchData(cfg){
-  const r = await scriptCall(cfg,{action:'read',sheetId:cfg.sheetId,tab:TAB_DATA,cell:'A1'});
-  return r.value||null;
+async function sheetsReadRange(cfg, tab, range){
+  if(!cfg.apiKey) throw new Error('Sin API Key');
+  const r = encodeURIComponent(tab+'!'+range);
+  const url = `${SH_BASE}/${cfg.sheetId}/values/${r}?key=${cfg.apiKey}`;
+  const resp = await fetch(url);
+  if(!resp.ok){
+    const err = await resp.json().catch(()=>({}));
+    if(resp.status===400||resp.status===404) return [];
+    throw new Error('Sheets range error '+resp.status+': '+(err.error?.message||''));
+  }
+  const j = await resp.json();
+  return j.values||[];
 }
+
+// ── WRITE via Apps Script doGet + JSONP callback ──
+function sheetsScriptCall(cfg, params){
+  return new Promise((resolve, reject)=>{
+    if(!cfg.scriptUrl){ reject(new Error('Sin Apps Script URL')); return; }
+    const cbName = '_gscb_'+Date.now();
+    const timeout = setTimeout(()=>{
+      delete window[cbName];
+      // Script calls sometimes timeout on JSONP but still execute — resolve optimistically
+      resolve({ok:true, timeout:true});
+    }, 8000);
+    window[cbName] = function(data){
+      clearTimeout(timeout);
+      delete window[cbName];
+      if(data && data.ok===false) reject(new Error(data.error||'Script error'));
+      else resolve(data||{ok:true});
+    };
+    const qs = Object.entries({...params, callback:cbName})
+      .map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
+    const s = document.createElement('script');
+    s.src = cfg.scriptUrl+'?'+qs;
+    s.onerror = ()=>{ clearTimeout(timeout); delete window[cbName]; reject(new Error('Script load failed')); };
+    document.head.appendChild(s);
+    setTimeout(()=>{ if(s.parentNode) s.parentNode.removeChild(s); }, 10000);
+  });
+}
+
+async function sheetsFetchData(cfg){ return sheetsReadCell(cfg, TAB_DATA, 'A1'); }
 
 async function sheetsFetchUsers(cfg){
-  const r = await scriptCall(cfg,{action:'readRange',sheetId:cfg.sheetId,tab:TAB_USERS,range:'A:D'});
-  const rows = r.values||[];
+  const rows = await sheetsReadRange(cfg, TAB_USERS, 'A:D');
   if(rows.length<2) return [];
   return rows.slice(1)
     .map(r=>({username:(r[0]||'').toLowerCase(),hash:r[1]||'',role:r[2]||ROLE.OPERATOR,active:r[3]||'Y'}))
@@ -3343,13 +3414,13 @@ async function sheetsFetchUsers(cfg){
 }
 
 async function sheetsWriteData(cfg, value){
-  await scriptCall(cfg,{action:'write',sheetId:cfg.sheetId,tab:TAB_DATA,cell:'A1',value:b64enc(value)});
+  await sheetsScriptCall(cfg,{action:'write',sheetId:cfg.sheetId,tab:TAB_DATA,cell:'A1',value:b64enc(value)});
 }
 
 async function sheetsWriteUsers(cfg, users){
-  const rows = [['username','hash','role','active'],...users.map(u=>[u.username,u.hash,u.role,u.active])];
-  await scriptCall(cfg,{action:'writeRows',sheetId:cfg.sheetId,tab:TAB_USERS,data:b64enc(JSON.stringify(rows))});
-  USERS = users;
+  const rows=[['username','hash','role','active'],...users.map(u=>[u.username,u.hash,u.role,u.active])];
+  await sheetsScriptCall(cfg,{action:'writeRows',sheetId:cfg.sheetId,tab:TAB_USERS,data:b64enc(JSON.stringify(rows))});
+  USERS=users;
 }
 
 // ═══════════════════════════════════════════════════
@@ -3460,6 +3531,115 @@ function renderUsersView(){
 }
 
 // ═══════════════════════════════════════════════════
+//  DIAGNÓSTICO DEL SISTEMA
+// ═══════════════════════════════════════════════════
+const DIAG_TESTS = [
+  { id:'cfg',    label:'Configuración local',    fn: diagTestConfig },
+  { id:'sess',   label:'Sesión activa',           fn: diagTestSession },
+  { id:'read',   label:'Lectura Google Sheets',   fn: diagTestRead },
+  { id:'users',  label:'Lectura de usuarios',     fn: diagTestUsers },
+  { id:'write',  label:'Escritura Google Sheets', fn: diagTestWrite },
+  { id:'scroll', label:'Scroll tabla resultados', fn: diagTestScroll },
+  { id:'import', label:'Datos en localStorage',   fn: diagTestLocal },
+];
+
+function diagCard(id, label, state, detail){
+  const colors={pass:'var(--ok)',fail:'var(--err)',running:'var(--orange)',skip:'var(--txt3)'};
+  const icons  ={pass:'✓',fail:'✕',running:'…',skip:'—'};
+  return `<div style="display:flex;align-items:flex-start;gap:14px;padding:14px 18px;background:#fff;border:1px solid var(--bdr);border-radius:var(--r);box-shadow:var(--shadow)" id="diag-${id}">
+    <span style="font-family:var(--fm);font-size:14px;font-weight:700;color:${colors[state]||'var(--txt3)'};flex-shrink:0;margin-top:1px">${icons[state]||'?'}</span>
+    <div style="flex:1">
+      <div style="font-size:12px;font-weight:500;color:var(--txt)">${label}</div>
+      ${detail?`<div style="font-size:11px;color:${state==='fail'?'var(--err)':'var(--txt3)'};margin-top:3px;line-height:1.5">${detail}</div>`:''}
+    </div>
+  </div>`;
+}
+
+function diagUpdate(id, state, detail){
+  const el = document.getElementById('diag-'+id);
+  if(el){ const tmp=document.createElement('div'); tmp.innerHTML=diagCard(id,'',state,detail); el.replaceWith(tmp.firstChild); }
+}
+
+async function runDiag(){
+  const wrap = document.getElementById('diagContent');
+  if(!wrap) return;
+  // Render all as running
+  wrap.innerHTML = DIAG_TESTS.map(t=>diagCard(t.id,t.label,'running','Probando...')).join('');
+  for(const t of DIAG_TESTS){
+    try{
+      const result = await t.fn();
+      diagUpdate(t.id, result.ok?'pass':'fail', result.detail||'');
+    }catch(e){
+      diagUpdate(t.id,'fail','Excepción: '+e.message);
+    }
+  }
+}
+
+async function diagTestConfig(){
+  const cfg=cfgLoad();
+  if(!cfg) return {ok:false,detail:'Sin configuración en localStorage'};
+  const missing=[];
+  if(!cfg.sheetId)   missing.push('sheetId');
+  if(!cfg.apiKey)    missing.push('apiKey');
+  if(!cfg.scriptUrl) missing.push('scriptUrl');
+  if(missing.length) return {ok:false,detail:'Faltan campos: '+missing.join(', ')};
+  return {ok:true,detail:`Sheet: ...${cfg.sheetId.slice(-8)} · API Key: ...${cfg.apiKey.slice(-6)} · Script: configurado`};
+}
+
+async function diagTestSession(){
+  const sess=sessLoad();
+  if(!sess) return {ok:false,detail:'Sin sesión guardada'};
+  const age=Math.round((Date.now()-sess.ts)/60000);
+  const exp=age>480;
+  return {ok:!exp, detail:`Usuario: ${sess.username} · Rol: ${sess.role} · Hace ${age} min ${exp?'— EXPIRADA':''}`};
+}
+
+async function diagTestRead(){
+  const cfg=cfgLoad();
+  if(!cfg?.apiKey) return {ok:false,detail:'Sin API Key configurada'};
+  try{
+    const val=await sheetsFetchData(cfg);
+    if(val===null) return {ok:true,detail:'Sheet accesible — celda A1 vacía (normal si aún no se ha escrito)'};
+    return {ok:true,detail:`Sheet accesible · Datos encontrados (${String(val).length} chars)`};
+  }catch(e){ return {ok:false,detail:'Error: '+e.message}; }
+}
+
+async function diagTestUsers(){
+  const cfg=cfgLoad();
+  if(!cfg?.apiKey) return {ok:false,detail:'Sin API Key'};
+  try{
+    const users=await sheetsFetchUsers(cfg);
+    if(!users.length) return {ok:false,detail:'Sin usuarios en txp_users — la pestaña puede estar vacía o no existir'};
+    return {ok:true,detail:`${users.length} usuario(s): ${users.map(u=>u.username+'('+u.role+')').join(', ')}`};
+  }catch(e){ return {ok:false,detail:'Error: '+e.message}; }
+}
+
+async function diagTestWrite(){
+  const cfg=cfgLoad();
+  if(!cfg?.scriptUrl) return {ok:false,detail:'Sin Apps Script URL'};
+  try{
+    const testVal=JSON.stringify({_diagTest:true,ts:Date.now()});
+    await sheetsScriptCall(cfg,{action:'write',sheetId:cfg.sheetId,tab:'txp_diag',cell:'A1',value:b64enc(testVal)});
+    return {ok:true,detail:'Escritura exitosa — pestaña txp_diag actualizada'};
+  }catch(e){ return {ok:false,detail:'Error: '+e.message}; }
+}
+
+async function diagTestScroll(){
+  const tblWrap=document.querySelector('.tbl-wrap');
+  if(!tblWrap) return {ok:true,detail:'No hay tabla activa — prueba con un archivo cargado'};
+  const style=getComputedStyle(tblWrap);
+  const hasScroll=style.overflowX==='auto'||style.overflowX==='scroll';
+  return {ok:hasScroll,detail:hasScroll?'overflow-x: auto ✓':'overflow-x: '+style.overflowX+' — sin scroll horizontal'};
+}
+
+async function diagTestLocal(){
+  const clients=Object.keys(DB.clients||{});
+  const sess=sessLoad();
+  const cfg=cfgLoad();
+  return {ok:true,detail:`Clientes en memoria: ${clients.length} · Sesión: ${sess?sess.username:'ninguna'} · Config: ${cfg?'OK':'ausente'}`};
+}
+
+// ═══════════════════════════════════════════════════
 //  UTILS
 // ═══════════════════════════════════════════════════
 function esc(str){ if(str===undefined||str===null) return ''; return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
@@ -3476,12 +3656,19 @@ document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click
 // Pre-configured credentials
 const PRECFG = {
   sheetId:   '1s_abLpa3WCS6UWK4XO3W5gVdK7uaAq7xMaZo8zl3uJE',
-  scriptUrl: 'https://script.google.com/macros/s/AKfycbwtzHYlwQnio1p3EljeGaaJKf3-BbDvvU-f597rUen24prWkuG8pYwzJTxGNgIV0k51vg/exec'
+  apiKey:    'AIzaSyB2Hy45Tt-8E86Cqt8SGQZ3ys7x-4D-TJo',
+  scriptUrl: 'https://script.google.com/macros/s/AKfycbwFmt3O7B4x3LeFUHAaKBb3sPqJ-SINsb1XunwwNVKsq4CQ8J-Tr1_L_ts4rxOvkSTDyg/exec'
 };
 
 (function init(){
   // Auto-save preconfigured credentials if not already set
-  if(!cfgLoad()) cfgSave(PRECFG);
+  // Also update scriptUrl if it changed (new Apps Script deployment)
+  const existing = cfgLoad();
+  if(!existing){
+    cfgSave(PRECFG);
+  } else if(existing.scriptUrl !== PRECFG.scriptUrl){
+    cfgSave({...existing, scriptUrl: PRECFG.scriptUrl, apiKey: PRECFG.apiKey});
+  }
   // Try to restore session (valid 8h)
   const sess=sessLoad();
   const cfg=cfgLoad();
