@@ -1293,7 +1293,7 @@ function updateHeaderClient(){
   document.getElementById('hdrClientName').textContent = c?c.name:'Sin cliente seleccionado';
   document.getElementById('btnTemplate').disabled = !c;
 }
-function renderAll(){ renderClientSidebar(); renderClientsGrid(); updateHeaderClient(); if(currentView==='validate') renderValidateView(); if(currentView==='compare') renderCompareView(); if(currentView==='users') renderUsersView(); }
+function renderAll(){ renderClientSidebar(); renderClientsGrid(); updateHeaderClient(); _applyNavRoles(); if(currentView==='validate') renderValidateView(); if(currentView==='compare') renderCompareView(); if(currentView==='users') renderUsersView(); }
 
 // ═══════════════════════════════════════════════════
 //  M2 — CLIENT MANAGER
@@ -1354,6 +1354,7 @@ function selectClient(id){
   showToast('✓ Activo: '+getClient(id)?.name);
   if(currentView==='validate') renderValidateView();
 }
+
 function selectClientAndValidate(event,id){ event.stopPropagation(); setActiveClient(id); renderClientSidebar(); nav('validate'); }
 function viewClientDetail(id){ nav('client-detail',id); }
 
@@ -3288,13 +3289,8 @@ async function enterApp(sess){
   roleEl.style.display = 'block';
   document.getElementById('hdrLogout').style.display='block';
   document.getElementById('hdrSync').style.display='flex';
-  // Apply nav visibility
+  // Apply nav visibility + role buttons
   _applyNavRoles();
-  // Apply page-level role buttons
-  const btnNew=document.getElementById('btnNewClient');
-  if(btnNew) btnNew.style.display=can('editClients')?'':'none';
-  const navDiag=document.getElementById('nav-diag');
-  if(navDiag) navDiag.style.display=isMaster()?'':'none';
   // Sync data from Sheets
   setSyncStatus('spin','Sincronizando...');
   const cfg = cfgLoad();
@@ -3315,10 +3311,11 @@ async function enterApp(sess){
 
 function _applyNavRoles(){
   const role = SESSION?.role;
-  // Compare: master + admin only
   document.getElementById('nav-compare').style.display = can('compare')?'':'none';
-  // Users: master + admin only
   document.getElementById('nav-users').style.display   = can('manageOps')?'':'none';
+  document.getElementById('nav-diag').style.display    = isMaster()?'':'none';
+  const btnNew = document.getElementById('btnNewClient');
+  if(btnNew) btnNew.style.display = can('editClients')?'':'none';
 }
 
 function authLogout(){
