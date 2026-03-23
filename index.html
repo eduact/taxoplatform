@@ -821,7 +821,7 @@ body{background:var(--s1);color:var(--txt);font-family:var(--fn);font-size:14px;
   <button class="hdr-logout" id="hdrLogout" onclick="authLogout()">Salir</button>
 </header>
 
-<div class="app" id="mainApp" style="display:none">
+<div class="app" id="mainApp">
   <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="sb-section">
@@ -3308,8 +3308,6 @@ async function enterApp(sess){
 
 function _applyNavRoles(){
   if(!SESSION) return;
-  // Show main app
-  document.getElementById('mainApp').style.display='flex';
 
   // Build nav menu dynamically based on role
   const navItems = [
@@ -3704,27 +3702,27 @@ const PRECFG = {
 
 (function init(){
   // Auto-save preconfigured credentials
-  const existing = cfgLoad();
-  if(!existing){
-    cfgSave(PRECFG);
-  } else if(existing.scriptUrl !== PRECFG.scriptUrl || existing.apiKey !== PRECFG.apiKey){
-    cfgSave({...existing, scriptUrl: PRECFG.scriptUrl, apiKey: PRECFG.apiKey});
-  }
+  try{
+    const existing = cfgLoad();
+    if(!existing){ cfgSave(PRECFG); }
+    else if(existing.scriptUrl !== PRECFG.scriptUrl || existing.apiKey !== PRECFG.apiKey){
+      cfgSave({...existing, scriptUrl:PRECFG.scriptUrl, apiKey:PRECFG.apiKey});
+    }
+  }catch(e){ cfgSave(PRECFG); }
+
   // Try to restore session (valid 8h)
-  const sess = sessLoad();
-  const cfg  = cfgLoad();
-  if(sess && cfg && (Date.now()-sess.ts < 8*60*60*1000)){
-    // Set SESSION immediately so isMaster() works during sync render
-    SESSION = sess;
-    enterApp(sess).catch(e=>{
-      console.error('enterApp failed:', e);
-      // Still show the app with local data
-      updateHeaderClient(); renderClientSidebar(); renderClientsGrid();
-      _applyNavRoles();
-    });
-  } else {
-    document.getElementById('loginScreen').classList.add('visible');
-  }
+  try{
+    const sess = sessLoad();
+    const cfg  = cfgLoad();
+    if(sess && cfg && sess.ts && (Date.now()-sess.ts < 8*60*60*1000)){
+      SESSION = sess; // Set immediately so isMaster() works
+      enterApp(sess); // async, handles its own errors
+      return;
+    }
+  }catch(e){ console.warn('Session restore failed:', e); }
+
+  // No session — show login
+  document.getElementById('loginScreen').classList.add('visible');
 })();
 </script>
 </body>
