@@ -936,8 +936,10 @@ body{background:var(--s1);color:var(--txt);font-family:var(--fn);font-size:14px;
       <div class="page-hdr">
         <div class="page-title">Diagnóstico del sistema</div>
         <div class="page-sep"></div>
+        <button class="page-btn" onclick="fixUsers()" id="btnFixUsers">⚙ Reparar usuarios</button>
         <button class="page-btn primary" onclick="runDiag()">▶ Ejecutar pruebas</button>
       </div>
+      <div id="diagFixMsg" style="display:none;margin-bottom:12px"></div>
       <div id="diagContent" style="display:flex;flex-direction:column;gap:10px;max-width:700px"></div>
     </div>
     <div class="view" id="view-validate">
@@ -3299,9 +3301,12 @@ async function enterApp(sess){
   try{
     const raw = await sheetsFetchData(cfg);
     if(raw){ const p=JSON.parse(raw); if(p?.clients){ DB.clients=p.clients; storageSave(DB); } }
-    if(!USERS.length) USERS = await sheetsFetchUsers(cfg);
     setSyncStatus('ok','Sincronizado');
-  }catch(e){ setSyncStatus('err','Sin conexión'); showToast('Usando datos locales','err'); }
+  }catch(e){ setSyncStatus('err','Sin conexión — datos locales'); }
+  // Load users separately — don't fail login if txp_users doesn't exist yet
+  try{
+    if(!USERS.length){ USERS = await sheetsFetchUsers(cfg); }
+  }catch(e){ console.warn('Users fetch on login:', e.message); }
   updateHeaderClient(); renderClientSidebar();
   // Navigate based on role
   if(isOp()) nav('validate');
@@ -3550,7 +3555,37 @@ async function runDiag(){
   }
 }
 
-async function diagTestConfig(){
+async function fixUsers(){
+  const btn = document.getElementById('btnFixUsers');
+  const msg = document.getElementById('diagFixMsg');
+  btn.disabled=true; btn.textContent='Reparando...';
+  msg.style.display='none';
+  try{
+    const cfg  = cfgLoad(); if(!cfg) throw new Error('Sin configuración');
+    const sess = sessLoad(); if(!sess) throw new Error('Sin sesión activa');
+    // Try to fetch existing users first
+    let users = [];
+    try{ users = await sheetsFetchUsers(cfg); }catch(e){ users=[]; }
+    // If current master not in list, add them
+    const exists = users.find(u=>u.username===sess.username);
+    if(!exists){
+      // We don't have the hash anymore — need to re-hash from a prompt
+      const newPass = prompt('Para reparar tu usuario Master, ingresa tu contraseña actual:');
+      if(!newPass){ btn.disabled=false; btn.textContent='⚙ Reparar usuarios'; return; }
+      const hash = await hashPwd(newPass);
+      users.push({username:sess.username, hash, role:ROLE.MASTER, active:'Y'});
+    }
+    await sheetsWriteUsers(cfg, users);
+    USERS = users;
+    msg.style.display='block';
+    msg.innerHTML=`<div style="padding:12px 16px;background:rgba(10,118,85,.08);border:1px solid rgba(10,118,85,.2);border-radius:var(--r);font-size:12px;color:var(--ok)">✓ Usuarios reparados — ${users.length} usuario(s) escritos al Sheet. Ejecuta las pruebas nuevamente.</div>`;
+    showToast('✓ Usuarios escritos al Sheet','ok');
+  }catch(e){
+    msg.style.display='block';
+    msg.innerHTML=`<div style="padding:12px 16px;background:rgba(204,34,0,.06);border:1px solid rgba(204,34,0,.2);border-radius:var(--r);font-size:12px;color:var(--err)">✕ Error: ${esc(e.message)}</div>`;
+  }
+  btn.disabled=false; btn.textContent='⚙ Reparar usuarios';
+}
   const cfg=cfgLoad();
   if(!cfg) return {ok:false,detail:'Sin configuración en localStorage'};
   const missing=[];
@@ -3632,7 +3667,7 @@ document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click
 const PRECFG = {
   sheetId:   '1s_abLpa3WCS6UWK4XO3W5gVdK7uaAq7xMaZo8zl3uJE',
   apiKey:    'AIzaSyB2Hy45Tt-8E86Cqt8SGQZ3ys7x-4D-TJo',
-  scriptUrl: 'https://script.google.com/macros/s/AKfycbwFmt3O7B4x3LeFUHAaKBb3sPqJ-SINsb1XunwwNVKsq4CQ8J-Tr1_L_ts4rxOvkSTDyg/exec'
+  scriptUrl: 'https://script.google.com/macros/s/AKfycbx2qbH__rO0eNp4VHwOAgZRMJwPsIxf0J7nf4WLgn791sl7OPcI05-CyPypV71n4OwOrA/exec'
 };
 
 (function init(){
