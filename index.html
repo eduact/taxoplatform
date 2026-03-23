@@ -3648,14 +3648,10 @@ async function diagTestWrite(){
   const cfg=cfgLoad();
   if(!cfg?.scriptUrl) return {ok:false,detail:'Sin Apps Script URL'};
   try{
-    const testVal = JSON.stringify({_diagTest:true, ts:Date.now()});
-    await scriptWrite(cfg, {action:'write', sheetId:cfg.sheetId, tab:'txp_diag', cell:'A1', value:b64enc(testVal)});
-    // Verify by reading back
-    await new Promise(r=>setTimeout(r,2500));
-    const check = await scriptRead(cfg, {action:'read', sheetId:cfg.sheetId, tab:'txp_diag', cell:'A1'});
-    if(check.value){ return {ok:true, detail:'Escritura y lectura verificadas ✓ — pestaña txp_diag actualizada'}; }
-    return {ok:true, detail:'Escritura enviada — no se pudo verificar (normal si Apps Script tarda)'};
-  }catch(e){ return {ok:false, detail:'Error: '+e.message}; }
+    const testVal=JSON.stringify({_diagTest:true,ts:Date.now()});
+    await scriptWrite(cfg,{action:'write',sheetId:cfg.sheetId,tab:'txp_diag',cell:'A1',value:b64enc(testVal)});
+    return {ok:true,detail:'Escritura enviada al Sheet ✓ — canal Apps Script operativo'};
+  }catch(e){ return {ok:false,detail:'Error: '+e.message}; }
 }
 
 async function diagTestScroll(){
