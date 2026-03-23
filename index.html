@@ -3339,89 +3339,64 @@ function setSyncStatus(state,label){
 
 // ═══════════════════════════════════════════════════
 //  GOOGLE SHEETS LAYER
-//  Lectura: Sheets REST API (Sheet público + API Key)
-//  Escritura: Apps Script doGet con callback JSONP
+//  Todo via Apps Script + proxy allorigins (resuelve CORS+redirect)
 // ═══════════════════════════════════════════════════
 const TAB_DATA  = 'txp_data';
 const TAB_USERS = 'txp_users';
-const SH_BASE   = 'https://sheets.googleapis.com/v4/spreadsheets';
 
 function b64enc(str){ try{ return btoa(unescape(encodeURIComponent(str))); }catch(e){ return btoa(str); } }
 function b64dec(str){ try{ return decodeURIComponent(escape(atob(str))); }catch(e){ return atob(str); } }
 
-// ── READ via Sheets REST API (requires API Key + public sheet) ──
-async function sheetsReadCell(cfg, tab, cell){
-  if(!cfg.apiKey) throw new Error('Sin API Key configurada');
-  const range = encodeURIComponent(tab+'!'+cell);
-  const url = `${SH_BASE}/${cfg.sheetId}/values/${range}?key=${cfg.apiKey}`;
+// Proxy que resuelve CORS y redirects de Apps Script
+const PROXY = 'https://api.allorigins.win/get?url=';
+
+async function scriptCall(cfg, params){
+  if(!cfg.scriptUrl) throw new Error('Sin Apps Script URL');
+  const qs  = Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
+  const target = cfg.scriptUrl + '?' + qs;
+  const url  = PROXY + encodeURIComponent(target);
   const resp = await fetch(url);
-  if(!resp.ok){
-    const err = await resp.json().catch(()=>({}));
-    throw new Error('Sheets read error '+ resp.status +': '+(err.error?.message||''));
-  }
-  const j = await resp.json();
-  return j.values?.[0]?.[0]||null;
+  if(!resp.ok) throw new Error('Proxy error ' + resp.status);
+  const envelope = await resp.json();
+  const text = envelope.contents || '';
+  try{ return JSON.parse(text); }
+  catch(e){ return {ok: true}; }
 }
 
-async function sheetsReadRange(cfg, tab, range){
-  if(!cfg.apiKey) throw new Error('Sin API Key');
-  const r = encodeURIComponent(tab+'!'+range);
-  const url = `${SH_BASE}/${cfg.sheetId}/values/${r}?key=${cfg.apiKey}`;
-  const resp = await fetch(url);
-  if(!resp.ok){
-    const err = await resp.json().catch(()=>({}));
-    if(resp.status===400||resp.status===404) return [];
-    throw new Error('Sheets range error '+resp.status+': '+(err.error?.message||''));
-  }
-  const j = await resp.json();
-  return j.values||[];
+async function sheetsFetchData(cfg){
+  const r = await scriptCall(cfg, {action:'read', sheetId:cfg.sheetId, tab:TAB_DATA, cell:'A1'});
+  return r.value || null;
 }
-
-// ── WRITE via Apps Script doGet + JSONP callback ──
-function sheetsScriptCall(cfg, params){
-  return new Promise((resolve, reject)=>{
-    if(!cfg.scriptUrl){ reject(new Error('Sin Apps Script URL')); return; }
-    const cbName = '_gscb_'+Date.now();
-    const timeout = setTimeout(()=>{
-      delete window[cbName];
-      // Script calls sometimes timeout on JSONP but still execute — resolve optimistically
-      resolve({ok:true, timeout:true});
-    }, 8000);
-    window[cbName] = function(data){
-      clearTimeout(timeout);
-      delete window[cbName];
-      if(data && data.ok===false) reject(new Error(data.error||'Script error'));
-      else resolve(data||{ok:true});
-    };
-    const qs = Object.entries({...params, callback:cbName})
-      .map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
-    const s = document.createElement('script');
-    s.src = cfg.scriptUrl+'?'+qs;
-    s.onerror = ()=>{ clearTimeout(timeout); delete window[cbName]; reject(new Error('Script load failed')); };
-    document.head.appendChild(s);
-    setTimeout(()=>{ if(s.parentNode) s.parentNode.removeChild(s); }, 10000);
-  });
-}
-
-async function sheetsFetchData(cfg){ return sheetsReadCell(cfg, TAB_DATA, 'A1'); }
 
 async function sheetsFetchUsers(cfg){
-  const rows = await sheetsReadRange(cfg, TAB_USERS, 'A:D');
-  if(rows.length<2) return [];
+  const r = await scriptCall(cfg, {action:'readRange', sheetId:cfg.sheetId, tab:TAB_USERS});
+  const rows = r.values || [];
+  if(rows.length < 2) return [];
   return rows.slice(1)
-    .map(r=>({username:(r[0]||'').toLowerCase(),hash:r[1]||'',role:r[2]||ROLE.OPERATOR,active:r[3]||'Y'}))
-    .filter(u=>u.username);
+    .map(r => ({
+      username: (r[0]||'').toLowerCase(),
+      hash:     r[1]||'',
+      role:     r[2]||ROLE.OPERATOR,
+      active:   r[3]||'Y'
+    }))
+    .filter(u => u.username);
 }
 
 async function sheetsWriteData(cfg, value){
-  await sheetsScriptCall(cfg,{action:'write',sheetId:cfg.sheetId,tab:TAB_DATA,cell:'A1',value:b64enc(value)});
+  await scriptCall(cfg, {action:'write', sheetId:cfg.sheetId, tab:TAB_DATA, cell:'A1', value:b64enc(value)});
 }
 
 async function sheetsWriteUsers(cfg, users){
-  const rows=[['username','hash','role','active'],...users.map(u=>[u.username,u.hash,u.role,u.active])];
-  await sheetsScriptCall(cfg,{action:'writeRows',sheetId:cfg.sheetId,tab:TAB_USERS,data:b64enc(JSON.stringify(rows))});
-  USERS=users;
+  const rows = [
+    ['username','hash','role','active'],
+    ...users.map(u => [u.username, u.hash, u.role, u.active])
+  ];
+  await scriptCall(cfg, {action:'writeRows', sheetId:cfg.sheetId, tab:TAB_USERS, data:b64enc(JSON.stringify(rows))});
+  USERS = users;
 }
+
+// sheetsScriptCall alias para diagnóstico
+async function sheetsScriptCall(cfg, params){ return scriptCall(cfg, params); }
 
 // ═══════════════════════════════════════════════════
 //  USERS VIEW
@@ -3619,7 +3594,7 @@ async function diagTestWrite(){
   if(!cfg?.scriptUrl) return {ok:false,detail:'Sin Apps Script URL'};
   try{
     const testVal=JSON.stringify({_diagTest:true,ts:Date.now()});
-    await sheetsScriptCall(cfg,{action:'write',sheetId:cfg.sheetId,tab:'txp_diag',cell:'A1',value:b64enc(testVal)});
+    await scriptCall(cfg,{action:'write',sheetId:cfg.sheetId,tab:'txp_diag',cell:'A1',value:b64enc(testVal)});
     return {ok:true,detail:'Escritura exitosa — pestaña txp_diag actualizada'};
   }catch(e){ return {ok:false,detail:'Error: '+e.message}; }
 }
