@@ -3392,40 +3392,52 @@ async function scriptRead(cfg, params){
   try{ return JSON.parse(text); }catch(e){ return {ok:true}; }
 }
 
-// ── ESCRITURA via POST (sin límite de tamaño, resuelve el problema de URL larga) ──
+// ── ESCRITURA via proxy GET usando writeRows (probado y funcionando) ──
 async function scriptWrite(cfg, params){
   if(!cfg.scriptUrl) throw new Error('Sin Apps Script URL');
+  const qs     = Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(String(v))).join('&');
+  const target = cfg.scriptUrl + '?' + qs;
+  const url    = PROXY + encodeURIComponent(target);
   try{
-    // POST directo — Apps Script acepta POST desde cualquier origen con doPost
-    const resp = await fetch(cfg.scriptUrl, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({...params, sheetId: cfg.sheetId}),
-      redirect: 'follow'
-    });
-    // Puede retornar opaque si hay redirect — lo consideramos éxito
-    return {ok: true};
-  }catch(e){
-    // Fallback: GET via proxy para payloads pequeños
-    try{
-      const qs  = Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
-      const url = cfg.scriptUrl + '?' + qs + '&sheetId=' + encodeURIComponent(cfg.sheetId);
-      const target = PROXY + encodeURIComponent(url);
-      await fetch(target, {signal: AbortSignal.timeout(10000)});
-    }catch(e2){ console.warn('Write fallback also failed:', e2.message); }
-    return {ok: true};
-  }
+    const resp = await fetch(url, {signal: AbortSignal.timeout(15000)});
+    if(resp.ok){ const env=await resp.json(); return JSON.parse(env.contents||'{"ok":true}'); }
+  }catch(e){ console.warn('scriptWrite error:', e.message); }
+  return {ok:true};
 }
 
 async function sheetsWriteData(cfg, value){
-  // POST con JSON puro — sin límite de tamaño
-  await scriptWrite(cfg, {action:'write', tab:TAB_DATA, cell:'A1', value});
+  // Divide el JSON en filas de 45000 chars — cada fila es un chunk
+  const CHUNK = 45000;
+  const chunks = [];
+  for(let i=0; i<value.length; i+=CHUNK) chunks.push([value.slice(i,i+CHUNK)]);
+  // Usa writeRows para guardar los chunks en txp_data (fila 1 = chunk 1, etc.)
+  const rows = [['__chunks__', String(chunks.length)], ...chunks];
+  await scriptWrite(cfg, {
+    action: 'writeRows',
+    sheetId: cfg.sheetId,
+    tab: TAB_DATA,
+    data: b64enc(JSON.stringify(rows))
+  });
 }
 
 async function sheetsFetchData(cfg){
-  const r = await scriptRead(cfg, {action:'read', sheetId:cfg.sheetId, tab:TAB_DATA, cell:'A1'});
-  if(!r.value) return null;
-  return r.value;
+  // Lee todas las filas de txp_data
+  const r = await scriptRead(cfg, {action:'readRange', sheetId:cfg.sheetId, tab:TAB_DATA});
+  const rows = r.values || [];
+  if(!rows.length) return null;
+  // Primera fila es el header con el número de chunks
+  if(rows[0][0]==='__chunks__'){
+    const numChunks = parseInt(rows[0][1]) || 0;
+    if(numChunks===0) return null;
+    // Filas 1..N son los chunks
+    let result = '';
+    for(let i=1; i<=numChunks && i<rows.length; i++){
+      result += (rows[i][0] || '');
+    }
+    return result || null;
+  }
+  // Fallback: primera celda es el valor completo
+  return rows[0][0] || null;
 }
 
 async function sheetsFetchUsers(cfg){
@@ -3439,7 +3451,12 @@ async function sheetsFetchUsers(cfg){
 
 async function sheetsWriteUsers(cfg, users){
   const rows = [['username','hash','role','active'], ...users.map(u=>[u.username,u.hash,u.role,u.active])];
-  await scriptWrite(cfg, {action:'writeRows', tab:TAB_USERS, data:rows});
+  await scriptWrite(cfg, {
+    action: 'writeRows',
+    sheetId: cfg.sheetId,
+    tab: TAB_USERS,
+    data: b64enc(JSON.stringify(rows))
+  });
   USERS = users;
 }
 
