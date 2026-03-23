@@ -3371,27 +3371,20 @@ async function scriptRead(cfg, params){
   try{ return JSON.parse(text); }catch(e){ return {ok:true}; }
 }
 
-// ── ESCRITURA via fetch image trick (evita CORS bloqueando respuesta) ──
-// Apps Script ejecuta aunque la respuesta sea opaca
+// ── ESCRITURA via fetch no-cors (fire and forget) ──
 async function scriptWrite(cfg, params){
   if(!cfg.scriptUrl) throw new Error('Sin Apps Script URL');
   const qs  = Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
   const url = cfg.scriptUrl + '?' + qs;
-  // Intento 1: fetch con no-cors (ejecuta pero respuesta opaca)
+  // Intento 1: proxy (responde con ok)
   try{
-    await fetch(url, {mode:'no-cors'});
-    // Esperar un momento y verificar que se escribió
-    await new Promise(r=>setTimeout(r,2000));
-    return {ok:true};
-  }catch(e){
-    // Intento 2: image ping (fallback)
-    return new Promise((resolve)=>{
-      const img = new Image();
-      img.onload = img.onerror = ()=>resolve({ok:true});
-      img.src = url + '&_t=' + Date.now();
-      setTimeout(()=>resolve({ok:true}), 5000);
-    });
-  }
+    const target = PROXY + encodeURIComponent(url);
+    const resp   = await fetch(target, {signal: AbortSignal.timeout(10000)});
+    if(resp.ok) return {ok:true};
+  }catch(e){ /* fallback */ }
+  // Intento 2: no-cors directo (fire and forget — Apps Script ejecuta igual)
+  try{ fetch(url, {mode:'no-cors'}); }catch(e){ /* ignore */ }
+  return {ok:true};
 }
 
 async function sheetsFetchData(cfg){
