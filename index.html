@@ -3392,7 +3392,7 @@ async function scriptRead(cfg, params){
   try{ return JSON.parse(text); }catch(e){ return {ok:true}; }
 }
 
-// ── ESCRITURA via proxy GET usando writeRows (probado y funcionando) ──
+// ── ESCRITURA via proxy GET — payloads pequeños únicamente ──
 async function scriptWrite(cfg, params){
   if(!cfg.scriptUrl) throw new Error('Sin Apps Script URL');
   const qs     = Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(String(v))).join('&');
@@ -3405,39 +3405,62 @@ async function scriptWrite(cfg, params){
   return {ok:true};
 }
 
+// ── Escribe un valor pequeño en una celda específica ──
+async function sheetsWriteCell(cfg, tab, cell, value){
+  await scriptWrite(cfg, {action:'write', sheetId:cfg.sheetId, tab, cell, value:b64enc(String(value))});
+}
+
+// ── sheetsWriteData: guarda cada cliente en su propia fila ──
 async function sheetsWriteData(cfg, value){
-  // Divide el JSON en filas de 45000 chars — cada fila es un chunk
-  const CHUNK = 45000;
-  const chunks = [];
-  for(let i=0; i<value.length; i+=CHUNK) chunks.push([value.slice(i,i+CHUNK)]);
-  // Usa writeRows para guardar los chunks en txp_data (fila 1 = chunk 1, etc.)
-  const rows = [['__chunks__', String(chunks.length)], ...chunks];
-  await scriptWrite(cfg, {
-    action: 'writeRows',
-    sheetId: cfg.sheetId,
-    tab: TAB_DATA,
-    data: b64enc(JSON.stringify(rows))
-  });
+  try{
+    const parsed = JSON.parse(value);
+    const clients = parsed.clients || {};
+    const keys = Object.keys(clients);
+    // Fila 1: metadata — número de clientes y timestamp
+    const meta = [['__meta__', String(keys.length), parsed.updatedAt||'']];
+    await scriptWrite(cfg, {
+      action:'writeRows', sheetId:cfg.sheetId, tab:TAB_DATA,
+      data: b64enc(JSON.stringify(meta))
+    });
+    await new Promise(r=>setTimeout(r,600));
+    // Escribir cada cliente en su propia fila usando writeCell
+    for(let i=0; i<keys.length; i++){
+      const clientJson = JSON.stringify(clients[keys[i]]);
+      const cell = 'A'+String(i+2); // A2, A3, A4...
+      await sheetsWriteCell(cfg, TAB_DATA, cell, clientJson);
+      if(i < keys.length-1) await new Promise(r=>setTimeout(r,500));
+    }
+  }catch(e){
+    console.error('sheetsWriteData error:', e);
+    throw e;
+  }
 }
 
 async function sheetsFetchData(cfg){
-  // Lee todas las filas de txp_data
   const r = await scriptRead(cfg, {action:'readRange', sheetId:cfg.sheetId, tab:TAB_DATA});
   const rows = r.values || [];
   if(!rows.length) return null;
-  // Primera fila es el header con el número de chunks
-  if(rows[0][0]==='__chunks__'){
-    const numChunks = parseInt(rows[0][1]) || 0;
-    if(numChunks===0) return null;
-    // Filas 1..N son los chunks
-    let result = '';
-    for(let i=1; i<=numChunks && i<rows.length; i++){
-      result += (rows[i][0] || '');
+  try{
+    // Fila 1: metadata
+    if(rows[0][0]==='__meta__'){
+      const numClients = parseInt(rows[0][1]) || 0;
+      if(numClients===0) return JSON.stringify({clients:{}, updatedAt:rows[0][2]||''});
+      const clients = {};
+      for(let i=1; i<=numClients && i<rows.length; i++){
+        const cellVal = rows[i][0];
+        if(!cellVal) continue;
+        try{
+          // Cada celda contiene base64 del JSON del cliente
+          const clientJson = b64dec(String(cellVal));
+          const client = JSON.parse(clientJson);
+          if(client && client.id) clients[client.id] = client;
+        }catch(e){ console.warn('Error parsing client row', i, e); }
+      }
+      return JSON.stringify({clients, updatedAt:rows[0][2]||new Date().toISOString()});
     }
-    return result || null;
-  }
-  // Fallback: primera celda es el valor completo
-  return rows[0][0] || null;
+    // Fallback: primera celda es JSON directo
+    return rows[0][0] || null;
+  }catch(e){ return null; }
 }
 
 async function sheetsFetchUsers(cfg){
