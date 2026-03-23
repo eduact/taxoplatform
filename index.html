@@ -3392,76 +3392,42 @@ async function scriptRead(cfg, params){
   try{ return JSON.parse(text); }catch(e){ return {ok:true}; }
 }
 
-// ── ESCRITURA via fetch no-cors (fire and forget) ──
+// ── ESCRITURA via POST (sin límite de tamaño, resuelve el problema de URL larga) ──
 async function scriptWrite(cfg, params){
   if(!cfg.scriptUrl) throw new Error('Sin Apps Script URL');
-  const qs  = Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
-  const url = cfg.scriptUrl + '?' + qs;
-  // Intento 1: proxy (responde con ok)
   try{
-    const target = PROXY + encodeURIComponent(url);
-    const resp   = await fetch(target, {signal: AbortSignal.timeout(10000)});
-    if(resp.ok) return {ok:true};
-  }catch(e){ /* fallback */ }
-  // Intento 2: no-cors directo (fire and forget — Apps Script ejecuta igual)
-  try{ fetch(url, {mode:'no-cors'}); }catch(e){ /* ignore */ }
-  return {ok:true};
+    // POST directo — Apps Script acepta POST desde cualquier origen con doPost
+    const resp = await fetch(cfg.scriptUrl, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({...params, sheetId: cfg.sheetId}),
+      redirect: 'follow'
+    });
+    // Puede retornar opaque si hay redirect — lo consideramos éxito
+    return {ok: true};
+  }catch(e){
+    // Fallback: GET via proxy para payloads pequeños
+    try{
+      const qs  = Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
+      const url = cfg.scriptUrl + '?' + qs + '&sheetId=' + encodeURIComponent(cfg.sheetId);
+      const target = PROXY + encodeURIComponent(url);
+      await fetch(target, {signal: AbortSignal.timeout(10000)});
+    }catch(e2){ console.warn('Write fallback also failed:', e2.message); }
+    return {ok: true};
+  }
 }
 
 async function sheetsWriteData(cfg, value){
-  // For large payloads, split into chunks written to separate cells
-  const encoded = b64enc(value);
-  const CHUNK = 40000; // safe URL length per chunk
-  if(encoded.length <= CHUNK){
-    // Single write
-    await scriptWrite(cfg, {action:'write', sheetId:cfg.sheetId, tab:TAB_DATA, cell:'A1', value:encoded});
-    // Write chunk count = 1
-    await scriptWrite(cfg, {action:'write', sheetId:cfg.sheetId, tab:TAB_DATA, cell:'B1', value:b64enc('1')});
-  } else {
-    // Multi-chunk write
-    const chunks = [];
-    for(let i=0; i<encoded.length; i+=CHUNK) chunks.push(encoded.slice(i,i+CHUNK));
-    for(let i=0; i<chunks.length; i++){
-      const col = String.fromCharCode(65+i); // A, B, C...
-      await scriptWrite(cfg, {action:'write', sheetId:cfg.sheetId, tab:TAB_DATA, cell:col+'1', value:b64enc(chunks[i])});
-      await new Promise(r=>setTimeout(r,500)); // throttle
-    }
-    // Write chunk count in last used col + 1
-    const countCol = String.fromCharCode(65+chunks.length);
-    await scriptWrite(cfg, {action:'write', sheetId:cfg.sheetId, tab:TAB_DATA, cell:countCol+'1', value:b64enc(String(chunks.length))});
-  }
+  // POST con JSON puro — sin límite de tamaño
+  await scriptWrite(cfg, {action:'write', tab:TAB_DATA, cell:'A1', value});
 }
 
 async function sheetsFetchData(cfg){
-  // Read chunk count from B1 first
-  const r1 = await scriptRead(cfg, {action:'read', sheetId:cfg.sheetId, tab:TAB_DATA, cell:'A1'});
-  if(!r1.value) return null;
-  const a1val = r1.value;
-  // Check if it's a single chunk (B1 = '1') or multi
-  try{
-    const rb = await scriptRead(cfg, {action:'read', sheetId:cfg.sheetId, tab:TAB_DATA, cell:'B1'});
-    const b1 = rb.value ? b64dec(rb.value) : null;
-    if(!b1 || b1==='1'){
-      // Single chunk — A1 contains the full base64
-      return b64dec(a1val);
-    }
-    const numChunks = parseInt(b1);
-    if(isNaN(numChunks) || numChunks<=1){
-      return b64dec(a1val);
-    }
-    // Multi-chunk — read A1..Z1
-    let encoded = b64dec(a1val);
-    for(let i=1; i<numChunks; i++){
-      const col = String.fromCharCode(65+i);
-      const rc = await scriptRead(cfg, {action:'read', sheetId:cfg.sheetId, tab:TAB_DATA, cell:col+'1'});
-      if(rc.value) encoded += b64dec(rc.value);
-    }
-    return encoded;
-  }catch(e){
-    // Fallback: treat A1 as full data
-    try{ return b64dec(a1val); }catch(e2){ return null; }
-  }
+  const r = await scriptRead(cfg, {action:'read', sheetId:cfg.sheetId, tab:TAB_DATA, cell:'A1'});
+  if(!r.value) return null;
+  return r.value;
 }
+
 async function sheetsFetchUsers(cfg){
   const r    = await scriptRead(cfg, {action:'readRange', sheetId:cfg.sheetId, tab:TAB_USERS});
   const rows = r.values || [];
@@ -3473,7 +3439,7 @@ async function sheetsFetchUsers(cfg){
 
 async function sheetsWriteUsers(cfg, users){
   const rows = [['username','hash','role','active'], ...users.map(u=>[u.username,u.hash,u.role,u.active])];
-  await scriptWrite(cfg, {action:'writeRows', sheetId:cfg.sheetId, tab:TAB_USERS, data:b64enc(JSON.stringify(rows))});
+  await scriptWrite(cfg, {action:'writeRows', tab:TAB_USERS, data:rows});
   USERS = users;
 }
 
@@ -3746,7 +3712,7 @@ document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click
 const PRECFG = {
   sheetId:   '1s_abLpa3WCS6UWK4XO3W5gVdK7uaAq7xMaZo8zl3uJE',
   apiKey:    'AIzaSyB2Hy45Tt-8E86Cqt8SGQZ3ys7x-4D-TJo',
-  scriptUrl: 'https://script.google.com/macros/s/AKfycbwo5ACBw9NQQjbVECCXKV2k_fe8CddpANXRWjCqIFstv8ttAxRShXVSGCnUbf8pqdjDlA/exec'
+  scriptUrl: 'https://script.google.com/macros/s/AKfycbyz0Mz4fjEZufflhlcGUcsHydz5uYkhgGe5G_y0Bqj_m9fYt2eplbcY8SBblS5SDnrrGQ/exec'
 };
 
 (function init(){
