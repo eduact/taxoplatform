@@ -1282,10 +1282,11 @@ function nav(view, data){
   const nb=document.getElementById('nav-'+view); if(nb) nb.classList.add('active');
   const el=document.getElementById('view-'+view); if(el) el.classList.add('active');
   currentView=view;
-  if(view==='clients') renderClientsGrid();
-  if(view==='validate') renderValidateView();
-  if(view==='compare'){ if(can('compare')) renderCompareView(); else return; }
-  if(view==='users'){   if(can('manageOps')) renderUsersView(); else return; }
+  if(view==='clients')      renderClientsGrid();
+  if(view==='validate')     renderValidateView();
+  if(view==='compare')      renderCompareView();
+  if(view==='users')        renderUsersView();
+  if(view==='diag')         {} // rendered on demand via button
   if(view==='client-detail' && data) renderClientDetail(data);
 }
 function updateHeaderClient(){
@@ -3290,25 +3291,28 @@ async function enterApp(sess){
   roleEl.style.display = 'block';
   document.getElementById('hdrLogout').style.display='block';
   document.getElementById('hdrSync').style.display='flex';
-  // Apply nav visibility + role buttons
+
+  // ── Render UI immediately with local data ──
   _applyNavRoles();
-  // Sync data from Sheets
+  updateHeaderClient();
+  renderClientSidebar();
+  if(isOp()) nav('validate');
+  else nav(Object.keys(DB.clients).length>0?'clients':'welcome');
+
+  // ── Sync from Sheets in background ──
   setSyncStatus('spin','Sincronizando...');
   const cfg = cfgLoad();
   try{
     const raw = await sheetsFetchData(cfg);
-    if(raw){ const p=JSON.parse(raw); if(p?.clients){ DB.clients=p.clients; storageSave(DB); } }
+    if(raw){
+      const p=JSON.parse(raw);
+      if(p?.clients){ DB.clients=p.clients; storageSave(DB); renderClientSidebar(); renderClientsGrid(); }
+    }
     setSyncStatus('ok','Sincronizado');
   }catch(e){ setSyncStatus('err','Sin conexión — datos locales'); }
-  // Load users separately — don't fail login if txp_users doesn't exist yet
   try{
     if(!USERS.length){ USERS = await sheetsFetchUsers(cfg); }
-  }catch(e){ console.warn('Users fetch on login:', e.message); }
-  updateHeaderClient(); renderClientSidebar();
-  _applyNavRoles(); // Re-apply after full render
-  // Navigate based on role
-  if(isOp()) nav('validate');
-  else nav(Object.keys(DB.clients).length>0?'clients':'welcome');
+  }catch(e){ console.warn('Users fetch:', e.message); }
 }
 
 function _applyNavRoles(){
@@ -3600,6 +3604,8 @@ async function fixUsers(){
   }
   btn.disabled=false; btn.textContent='⚙ Reparar usuarios';
 }
+
+async function diagTestConfig(){
   const cfg=cfgLoad();
   if(!cfg) return {ok:false,detail:'Sin configuración en localStorage'};
   const missing=[];
