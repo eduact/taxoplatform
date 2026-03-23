@@ -826,13 +826,19 @@ body{background:var(--s1);color:var(--txt);font-family:var(--fn);font-size:14px;
   <aside class="sidebar">
     <div class="sb-section">
       <div class="sb-label">Navegación</div>
-      <div id="navMenu"></div>
+      <div id="navMenu">
+        <button class="sb-btn" id="nav-clients" onclick="nav('clients')">◫ Clientes</button>
+        <button class="sb-btn" id="nav-validate" onclick="nav('validate')">✓ Validar</button>
+        <button class="sb-btn" id="nav-compare" onclick="nav('compare')">⇄ Comparar</button>
+        <button class="sb-btn" id="nav-users" onclick="nav('users')">👤 Usuarios</button>
+        <button class="sb-btn" id="nav-diag" onclick="nav('diag')">⚙ Diagnóstico</button>
+      </div>
     </div>
     <div class="sb-section" style="flex:1">
       <div class="sb-label">Clientes</div>
       <div class="client-list" id="clientList"></div>
       <div class="no-clients" id="noClientsMsg" style="display:none">Aún no tienes clientes.<br>Crea el primero para comenzar.</div>
-      <div id="sidebarNewClientBtn"></div>
+      <button class="add-dashed-btn" id="sidebarNewClientBtn" onclick="startNewClient()">+ Nuevo cliente</button>
     </div>
     <div class="sb-section">
       <div class="sb-label">Datos</div>
@@ -1272,15 +1278,14 @@ const CLIENT_COLORS=['#FF5C1A','#013334','#080843','#0A7655','#CC2200','#7C3AED'
 let currentView='welcome';
 function nav(view, data){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  currentView=view;
-  // Rebuild nav to update active state
-  _applyNavRoles();
+  document.querySelectorAll('.sb-btn').forEach(b=>b.classList.remove('active'));
+  const nb=document.getElementById('nav-'+view); if(nb) nb.classList.add('active');
   const el=document.getElementById('view-'+view); if(el) el.classList.add('active');
+  currentView=view;
   if(view==='clients') renderClientsGrid();
   if(view==='validate') renderValidateView();
   if(view==='compare'){ if(can('compare')) renderCompareView(); else return; }
   if(view==='users'){   if(can('manageOps')) renderUsersView(); else return; }
-  if(view==='diag'){    if(isMaster()) {} else return; }
   if(view==='client-detail' && data) renderClientDetail(data);
 }
 function updateHeaderClient(){
@@ -3308,29 +3313,12 @@ async function enterApp(sess){
 
 function _applyNavRoles(){
   if(!SESSION) return;
-
-  // Build nav menu dynamically based on role
-  const navItems = [
-    {id:'clients', label:'◫ Clientes',      always:true},
-    {id:'validate',label:'✓ Validar',       always:true},
-    {id:'compare', label:'⇄ Comparar',      show:can('compare')},
-    {id:'users',   label:'👤 Usuarios',     show:can('manageOps')},
-    {id:'diag',    label:'⚙ Diagnóstico',   show:isMaster()},
-  ];
-  document.getElementById('navMenu').innerHTML = navItems
-    .filter(i=>i.always||i.show)
-    .map(i=>`<button class="sb-btn ${currentView===i.id?'active':''}" id="nav-${i.id}" onclick="nav('${i.id}')">${i.label}</button>`)
-    .join('');
-
-  // Sidebar new client button
-  const sidebarBtn = document.getElementById('sidebarNewClientBtn');
-  if(sidebarBtn) sidebarBtn.innerHTML = can('editClients')
-    ? `<button class="add-dashed-btn" onclick="startNewClient()">+ Nuevo cliente</button>`
-    : '';
-
-  // Page-level new client button
-  const btnNew = document.getElementById('btnNewClient');
-  if(btnNew) btnNew.style.display = can('editClients')?'':'none';
+  const s = (id,show)=>{ const el=document.getElementById(id); if(el) el.style.display=show?'':'none'; };
+  s('nav-compare',         can('compare'));
+  s('nav-users',           can('manageOps'));
+  s('nav-diag',            isMaster());
+  s('sidebarNewClientBtn', can('editClients'));
+  s('btnNewClient',        can('editClients'));
 }
 
 function authLogout(){
