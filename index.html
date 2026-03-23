@@ -3304,6 +3304,7 @@ async function enterApp(sess){
     if(!USERS.length){ USERS = await sheetsFetchUsers(cfg); }
   }catch(e){ console.warn('Users fetch on login:', e.message); }
   updateHeaderClient(); renderClientSidebar();
+  _applyNavRoles(); // Re-apply after full render
   // Navigate based on role
   if(isOp()) nav('validate');
   else nav(Object.keys(DB.clients).length>0?'clients':'welcome');
@@ -3686,19 +3687,25 @@ const PRECFG = {
 };
 
 (function init(){
-  // Auto-save preconfigured credentials if not already set
-  // Also update scriptUrl if it changed (new Apps Script deployment)
+  // Auto-save preconfigured credentials
   const existing = cfgLoad();
   if(!existing){
     cfgSave(PRECFG);
-  } else if(existing.scriptUrl !== PRECFG.scriptUrl){
+  } else if(existing.scriptUrl !== PRECFG.scriptUrl || existing.apiKey !== PRECFG.apiKey){
     cfgSave({...existing, scriptUrl: PRECFG.scriptUrl, apiKey: PRECFG.apiKey});
   }
   // Try to restore session (valid 8h)
-  const sess=sessLoad();
-  const cfg=cfgLoad();
+  const sess = sessLoad();
+  const cfg  = cfgLoad();
   if(sess && cfg && (Date.now()-sess.ts < 8*60*60*1000)){
-    enterApp(sess);
+    // Set SESSION immediately so isMaster() works during sync render
+    SESSION = sess;
+    enterApp(sess).catch(e=>{
+      console.error('enterApp failed:', e);
+      // Still show the app with local data
+      updateHeaderClient(); renderClientSidebar(); renderClientsGrid();
+      _applyNavRoles();
+    });
   } else {
     document.getElementById('loginScreen').classList.add('visible');
   }
