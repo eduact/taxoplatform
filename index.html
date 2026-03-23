@@ -3441,16 +3441,13 @@ async function sheetsFetchData(cfg){
     try{ return b64dec(a1val); }catch(e2){ return null; }
   }
 }
+async function sheetsFetchUsers(cfg){
   const r    = await scriptRead(cfg, {action:'readRange', sheetId:cfg.sheetId, tab:TAB_USERS});
   const rows = r.values || [];
   if(rows.length < 2) return [];
   return rows.slice(1)
     .map(r=>({username:(r[0]||'').toLowerCase(), hash:r[1]||'', role:r[2]||ROLE.OPERATOR, active:r[3]||'Y'}))
     .filter(u=>u.username);
-}
-
-async function sheetsWriteData(cfg, value){
-  await scriptWrite(cfg, {action:'write', sheetId:cfg.sheetId, tab:TAB_DATA, cell:'A1', value:b64enc(value)});
 }
 
 async function sheetsWriteUsers(cfg, users){
