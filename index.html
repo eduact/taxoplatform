@@ -3410,25 +3410,58 @@ async function sheetsWriteCell(cfg, tab, cell, value){
   await scriptWrite(cfg, {action:'write', sheetId:cfg.sheetId, tab, cell, value:b64enc(String(value))});
 }
 
-// ── sheetsWriteData: guarda cada cliente en su propia fila ──
+// ── sheetsWriteData: una sola llamada writeRows con todos los clientes ──
 async function sheetsWriteData(cfg, value){
   try{
-    const parsed = JSON.parse(value);
+    const parsed  = JSON.parse(value);
     const clients = parsed.clients || {};
-    const keys = Object.keys(clients);
-    // Fila 1: metadata — número de clientes y timestamp
-    const meta = [['__meta__', String(keys.length), parsed.updatedAt||'']];
-    await scriptWrite(cfg, {
-      action:'writeRows', sheetId:cfg.sheetId, tab:TAB_DATA,
-      data: b64enc(JSON.stringify(meta))
-    });
-    await new Promise(r=>setTimeout(r,600));
-    // Escribir cada cliente en su propia fila usando writeCell
-    for(let i=0; i<keys.length; i++){
-      const clientJson = JSON.stringify(clients[keys[i]]);
-      const cell = 'A'+String(i+2); // A2, A3, A4...
-      await sheetsWriteCell(cfg, TAB_DATA, cell, clientJson);
-      if(i < keys.length-1) await new Promise(r=>setTimeout(r,500));
+    const keys    = Object.keys(clients);
+
+    // Construir todas las filas: fila 0 = meta, fila N+1 = cliente N en base64
+    const rows = [
+      ['__meta__', String(keys.length), parsed.updatedAt||new Date().toISOString()]
+    ];
+    for(const key of keys){
+      const clientJson = JSON.stringify(clients[key]);
+      rows.push([b64enc(clientJson)]);
+    }
+
+    // Dividir rows en bloques si el JSON de rows es muy grande
+    const rowsJson = JSON.stringify(rows);
+    const encoded  = b64enc(rowsJson);
+
+    // Si cabe en una URL proxy (~6000 chars encoded), enviar directo
+    // Si no, enviar en dos pasos: meta primero, luego clientes uno a uno
+    if(encoded.length < 6000){
+      await scriptWrite(cfg, {
+        action:'writeRows', sheetId:cfg.sheetId, tab:TAB_DATA, data:encoded
+      });
+    } else {
+      // Paso 1: escribir solo meta (limpia el Sheet)
+      const metaEncoded = b64enc(JSON.stringify([rows[0]]));
+      await scriptWrite(cfg, {
+        action:'writeRows', sheetId:cfg.sheetId, tab:TAB_DATA, data:metaEncoded
+      });
+      await new Promise(r=>setTimeout(r,800));
+      // Paso 2: append cada cliente usando write individual
+      for(let i=0; i<keys.length; i++){
+        const clientEncoded = b64enc(JSON.stringify(clients[keys[i]]));
+        await scriptWrite(cfg, {
+          action:'write', sheetId:cfg.sheetId, tab:TAB_DATA,
+          cell:'A'+String(i+2), value:clientEncoded
+        });
+        await new Promise(r=>setTimeout(r,400));
+      }
+      // Paso 3: actualizar meta con count correcto
+      const finalMeta = b64enc(JSON.stringify([rows[0]]));
+      await scriptWrite(cfg, {
+        action:'write', sheetId:cfg.sheetId, tab:TAB_DATA,
+        cell:'A1', value:b64enc('__meta__')
+      });
+      await scriptWrite(cfg, {
+        action:'write', sheetId:cfg.sheetId, tab:TAB_DATA,
+        cell:'B1', value:b64enc(String(keys.length))
+      });
     }
   }catch(e){
     console.error('sheetsWriteData error:', e);
@@ -3441,25 +3474,25 @@ async function sheetsFetchData(cfg){
   const rows = r.values || [];
   if(!rows.length) return null;
   try{
-    // Fila 1: metadata
-    if(rows[0][0]==='__meta__'){
-      const numClients = parseInt(rows[0][1]) || 0;
-      if(numClients===0) return JSON.stringify({clients:{}, updatedAt:rows[0][2]||''});
+    const firstCell = String(rows[0][0]||'');
+    // Formato nuevo: fila 0 = ['__meta__', count, ts], filas 1+ = [b64(clientJson)]
+    if(firstCell==='__meta__'){
+      const numClients = parseInt(rows[0][1])||0;
+      if(numClients===0) return JSON.stringify({clients:{},updatedAt:rows[0][2]||''});
       const clients = {};
       for(let i=1; i<=numClients && i<rows.length; i++){
-        const cellVal = rows[i][0];
-        if(!cellVal) continue;
+        const cell = String(rows[i][0]||'');
+        if(!cell) continue;
         try{
-          // Cada celda contiene base64 del JSON del cliente
-          const clientJson = b64dec(String(cellVal));
+          const clientJson = b64dec(cell);
           const client = JSON.parse(clientJson);
-          if(client && client.id) clients[client.id] = client;
-        }catch(e){ console.warn('Error parsing client row', i, e); }
+          if(client?.id) clients[client.id]=client;
+        }catch(e){ console.warn('Row parse error',i,e); }
       }
-      return JSON.stringify({clients, updatedAt:rows[0][2]||new Date().toISOString()});
+      return JSON.stringify({clients, updatedAt:rows[0][2]||''});
     }
-    // Fallback: primera celda es JSON directo
-    return rows[0][0] || null;
+    // Fallback formato viejo: A1 tiene el JSON directo o base64
+    try{ return b64dec(firstCell); }catch(e){ return firstCell||null; }
   }catch(e){ return null; }
 }
 
