@@ -1141,18 +1141,29 @@ function exportAllJSON(){
 function importJSON(input){
   const file=input.files[0]; if(!file) return;
   const reader=new FileReader();
-  reader.onload=e=>{ try{
+  reader.onload=async e=>{ try{
     const d=JSON.parse(e.target.result);
     if(!d.clients) throw new Error('Formato inválido');
-    Object.assign(DB.clients,d.clients); storageSave(DB); renderAll();
-    showToast('✓ Importado — '+Object.keys(d.clients).length+' clientes');
-    // Sync to Sheets
+    const count = Object.keys(d.clients).length;
+    if(count===0) throw new Error('El archivo no contiene clientes');
+    // Merge into DB
+    Object.assign(DB.clients, d.clients);
+    storageSave(DB);
+    renderAll();
+    showToast('✓ Importado — '+count+' cliente(s)');
+    // Sync to Sheets — write current state
     const cfg=cfgLoad();
     if(cfg && can('editClients')){
-      setSyncStatus('spin','Sincronizando con Sheets...');
-      sheetsWriteData(cfg,JSON.stringify({clients:DB.clients,updatedAt:new Date().toISOString()}))
-        .then(()=>setSyncStatus('ok','Guardado en Sheets'))
-        .catch(e=>{ setSyncStatus('err','Error al sincronizar'); showToast('Importado localmente — error al sincronizar: '+e.message,'err'); });
+      setSyncStatus('spin','Guardando en Sheets...');
+      const payload = JSON.stringify({clients:DB.clients, updatedAt:new Date().toISOString()});
+      try{
+        await sheetsWriteData(cfg, payload);
+        setSyncStatus('ok','Guardado en Sheets ✓');
+        showToast('✓ '+count+' cliente(s) guardados en Sheets','ok');
+      }catch(e){
+        setSyncStatus('err','Error al sincronizar');
+        showToast('Importado localmente — fallo al sincronizar Sheets','err');
+      }
     }
   }catch(err){ showToast('Error: '+err.message,'err'); }};
   reader.readAsText(file); input.value='';
@@ -3299,14 +3310,24 @@ async function enterApp(sess){
   if(isOp()) nav('validate');
   else nav(Object.keys(DB.clients).length>0?'clients':'welcome');
 
-  // ── Sync from Sheets in background ──
+  // Sync from Sheets in background
   setSyncStatus('spin','Sincronizando...');
   const cfg = cfgLoad();
   try{
     const raw = await sheetsFetchData(cfg);
     if(raw){
-      const p=JSON.parse(raw);
-      if(p?.clients){ DB.clients=p.clients; storageSave(DB); renderClientSidebar(); renderClientsGrid(); }
+      const p = JSON.parse(raw);
+      if(p?.clients){
+        const sheetCount = Object.keys(p.clients).length;
+        const localCount = Object.keys(DB.clients).length;
+        // Only overwrite local if Sheet has more or equal data
+        if(sheetCount >= localCount){
+          DB.clients = p.clients;
+          storageSave(DB);
+          renderClientSidebar();
+          renderClientsGrid();
+        }
+      }
     }
     setSyncStatus('ok','Sincronizado');
   }catch(e){ setSyncStatus('err','Sin conexión — datos locales'); }
